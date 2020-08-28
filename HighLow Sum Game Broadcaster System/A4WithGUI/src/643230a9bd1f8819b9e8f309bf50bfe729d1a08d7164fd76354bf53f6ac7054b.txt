@@ -1,0 +1,3043 @@
+============================================
+C:\Users\User\Desktop\A4WithGUI\src\./AdminData.java
+/*
+ * CSCI213 Assignment 2
+ * --------------------------
+ * File name: AdminData.java
+ * Author: V Prathyaksha
+ * Student Number: 5283048
+ * Description: Contains all other miscellaneous 
+ * functions needed to handle the Player data
+ */
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Scanner;
+
+
+// Open players.dat and imports players to playerList arrayList
+public class AdminData{
+    public ArrayList<Player> playerList;
+   
+    public AdminData(){
+    
+	playerList = new ArrayList<Player>();
+    
+    try{
+        Scanner fileScanner = new Scanner(new File("players.dat"));
+        while(fileScanner.hasNextLine())
+        {   
+            String data = fileScanner.nextLine();
+            String [] dataArray = data.split("\\|");
+            String loginName = dataArray[0];
+            String hashedPassword = dataArray[1];
+            String chipsString = dataArray[2];
+            int chips = Integer.parseInt(chipsString);
+            String name = dataArray[3];
+            String email = dataArray[4];
+            String birthdate = dataArray[5];
+            
+            Player p = new Player(loginName,hashedPassword,chips,name,email,birthdate);
+            playerList.add(p);
+        }
+        fileScanner.close();
+	
+	    }
+	    catch(FileNotFoundException ex)
+	    {
+	        System.out.println("players.dat not found.");
+	        
+	    }
+	}
+	public void updateAdminDataToFile()
+	{
+	    try{
+	    
+	        PrintWriter fileOut = new PrintWriter("players.dat");
+	        
+	        for(Player p:playerList)
+	        {
+	            String loginName = p.getLoginName();
+	            String hashedPassword = p.getHashedPassword();
+	            String chipsString = p.getChips()+"";
+	            String name = p.getName();
+	            String email = p.getEmail();
+	            String birthday = p.getBirthdate();
+	            
+	            String format = loginName+"|"+hashedPassword+"|"+chipsString+"|"+name+"|"+email+"|"+birthday;
+	            fileOut.println(format);
+	            
+	        }
+	        
+	        fileOut.close();
+	        
+	    }catch(IOException e)
+	    {
+	        System.out.println("Unable to open admin.dat for writing.");
+	        
+	    }
+	    
+	}
+	public Player getPlayer(String loginName)
+	{
+	    Player player=null;
+	    
+	    for(Player p:playerList)
+	        {
+	            if(p.getLoginName().equals(loginName))
+	            {
+	                
+	                player = p;
+	            }
+	            
+	        }
+	    
+	    return player;
+	}
+	public boolean checkAccount(String username, String password){
+		boolean status = true;
+		for(Player p:playerList)
+        {
+			// Check username
+            if(p.getLoginName().equals(username))
+            {
+                // Check password
+            	boolean pwCheck = true;
+            	p.checkPassword(password);
+    	        if(pwCheck){
+    	        	return status;
+    	        }
+    	        else{
+    	        	status = false;
+    	        }
+            }
+            else{
+            	status = false;
+            }
+        }
+		return status;
+	}
+
+	@Override
+ 	public String toString() {
+		return "AdminData [playerList=" + playerList + ", getClass()=" + getClass() + ", hashCode()=" + hashCode()
+				+ ", toString()=" + super.toString() + "]";
+	}
+}
+============================================
+C:\Users\User\Desktop\A4WithGUI\src\./BetListener.java
+/*
+ * CSCI213 Assignment 3
+ * --------------------------
+ * File name: BetListener.java
+ * Author: V Prathyaksha
+ * Student Number: 5283048
+ * Description: Action Listener for player 
+ * to enter amount to bet
+ */
+
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.event.*;
+import javax.swing.*;
+
+public class BetListener implements ActionListener{
+	JPanel betting = new JPanel();
+	JLabel question = new JLabel("Player call, state bet: ");
+	JTextField answer = new JTextField("", 5);
+	JButton submit = new JButton("Enter");
+	String ans;
+	int betAmount;
+	
+	Font customFont = new Font("Serif", Font.PLAIN, 32);
+	
+	public BetListener() {
+		
+		betting.setBackground(Color.pink);
+		
+		question.setFont(customFont);
+		answer.setFont(customFont);
+		submit.setFont(customFont);
+		
+		betting.add(question);
+		betting.add(answer);
+		betting.add(submit);
+		
+		answer.addActionListener(this);
+		submit.addActionListener(this);
+	}
+	@Override
+	public void actionPerformed(ActionEvent event) {
+		ans = answer.getText();	
+		betAmount = Integer.parseInt(ans);
+	}
+	public int getBetAmount() {
+		return betAmount;
+	}
+	public void setBetAmount(int betAmount) {
+		this.betAmount = betAmount;
+	}
+}
+============================================
+C:\Users\User\Desktop\A4WithGUI\src\./BlackJackGame.java
+/*
+ * CSCI213 Assignment 2
+ * --------------------------
+ * File name: BlackJackGame.java
+ * Author: V Prathyaksha
+ * Student Number: 5283048
+ * Description: Runs the whole program
+ */
+ 
+public class BlackJackGame {
+
+	public static void main(String[] args) {
+		
+		new GameModule().run();
+		
+	}
+
+}
+============================================
+C:\Users\User\Desktop\A4WithGUI\src\./BrainInterface.java
+
+
+public interface BrainInterface {
+	public char nextMove(int cardsValue); 
+}
+============================================
+C:\Users\User\Desktop\A4WithGUI\src\./BroadCaster.java
+
+import java.util.ArrayList;
+
+public class BroadCaster {
+
+	private ArrayList<GameViewerTransmitter> clients;
+	
+	public BroadCaster(){
+		clients = new ArrayList<GameViewerTransmitter>();
+	}
+	public synchronized void newMessage(Message message){
+
+		for(GameViewerTransmitter client: clients){
+			client.sentMessage(message);
+		}
+	}
+	
+	public synchronized void removeAllClient(){
+		
+		//close all the connections
+		for(GameViewerTransmitter client: clients){
+			client.end();
+		}
+		
+		clients.clear();
+	}
+	public synchronized void addClient(GameViewerTransmitter client){
+		clients.add(client);
+	}
+	
+	
+}
+============================================
+C:\Users\User\Desktop\A4WithGUI\src\./Card.java
+/*
+ * CSCI213 Assignment 2
+ * --------------------------
+ * File name: Card.java
+ * Author: V Prathyaksha
+ * Student Number: 5283048
+ * Description: Initialized new card from 
+ * Deck.java
+ */
+
+public class Card {
+
+	private String suit;
+	private String name;
+	private int value;
+
+	public Card(String s, String n, int v) {
+		suit = s;
+		name = n;
+		value = v;
+	}
+
+	public String getSuit() {
+		return suit;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public int getValue() {
+		return value;
+	}
+
+	public String toString() {
+		return "<" + suit + " " + name + " " + value + ">";
+	}
+
+}
+============================================
+C:\Users\User\Desktop\A4WithGUI\src\./Dealer.java
+/*
+ * CSCI213 Assignment 2
+ * --------------------------
+ * File name: Dealer.java
+ * Author: V Prathyaksha
+ * Student Number: 5283048
+ * Description: Initializes dealer and has 
+ * all the functions a dealer needs such as
+ * shuffling and dealing
+ */
+
+
+public class Dealer extends GamePlayer {
+
+	Deck deck;
+
+	public Dealer() {
+		super("Dealer", "", 0,false, "dName", "dealer@gaming.com", "12-12-2012");
+		deck = new Deck();
+	}
+
+	public void shuffleCards() {
+
+		deck.shuffle();
+	}
+
+	public Card dealCard() {
+		return deck.dealCard();
+	}
+}
+============================================
+C:\Users\User\Desktop\A4WithGUI\src\./Deck.java
+/*
+ * CSCI213 Assignment 3
+ * --------------------------
+ * File name: Deck.java
+ * Author: V Prathyaksha
+ * Student Number: 5283048
+ * Description: Displays card image etc.
+ */
+
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.util.*;
+import javax.swing.*;
+
+public class Deck{
+    private ArrayList<Card> cards;
+	JPanel subPanel1, subPanel2;
+	JPanel subPanelMain = new JPanel();
+	JPanel imagePanel, titlePanel;
+	Font customFont = new Font("Serif", Font.PLAIN, 32);
+	FlowLayout flow = new FlowLayout();
+	BoxLayout box1 = new BoxLayout(subPanel1, BoxLayout.Y_AXIS);
+	BoxLayout box2 = new BoxLayout(subPanel2, BoxLayout.Y_AXIS);
+    
+    public Deck()
+    {		
+        cards = new ArrayList<Card>();
+        String [] suits = {"Heart","Diamond","Spade","Club"};
+        
+        int jqkValue = 0;
+        
+        for(int n=0;n<suits.length;n++)
+        {
+            String suit = suits[n];
+            Card card;
+            
+            card = new Card(suit,"Ace",1);
+            cards.add(card);
+            
+            jqkValue = 1;
+            if(suit == "Club" | suit == "Spade"){
+            	jqkValue = -1;
+            }
+            
+            for(int i=2;i<=10;i++)
+            {
+                card = new Card(suit,i+"",(i*jqkValue));
+                cards.add(card);
+            }
+
+            jqkValue = 10;
+            if(suit == "Club" | suit == "Spade"){
+            	jqkValue = -10;
+            }
+            card = new Card(suit,"Jack",jqkValue);
+            cards.add(card);
+         
+            card = new Card(suit,"Queen",jqkValue);
+            cards.add(card);
+      
+            card = new Card(suit,"King",jqkValue);
+            cards.add(card);
+        }
+        
+    }
+    
+    public void showCards()
+    {   
+    	for(Card card: cards){
+    		showCard(card);
+       }
+    }
+    
+    public JPanel showCard(Card card){
+    	subPanel1 = new JPanel();
+    	subPanel1.setSize(80, 80);
+    	
+    	String imageName = card.getSuit() + card.getName() + ".jpg";
+  	    ImageIcon cardImage = new ImageIcon(imageName);
+  	   
+    	 imagePanel = new JPanel();
+    	 JLabel img = new JLabel(cardImage);
+    	 imagePanel.add(img);
+    	 
+    	 return imagePanel;
+    }
+    
+    public JPanel showCard(Card card, String name){
+    	subPanel2 = new JPanel();
+    	subPanel2.setSize(80, 80);
+
+  	    String imageName = card.getSuit() + "Hidden" + ".jpg";
+  	    ImageIcon cardImage = new ImageIcon(imageName);
+  	   
+	  	 JPanel imagePanel = new JPanel();
+		 JLabel img = new JLabel(cardImage);
+		 imagePanel.add(img);
+		 
+		 return imagePanel;
+     }
+    
+    public Card dealCard()
+    {
+        return cards.remove(0);
+    }
+    
+    public void appendCard(Card c)
+    {
+        cards.add(c);
+        
+    }
+    
+    public void appendCards(ArrayList<Card> cards)
+    {  
+    	shuffle(cards);
+        for(Card c: cards)
+            this.cards.add(c);
+        
+    }
+    
+    public void shuffle(){
+    	shuffle(cards);
+    }
+    
+    public void shuffle(ArrayList<Card> cards)
+    {
+        Random r = new Random();
+        for(int i=0;i<cards.size()*1000;i++)
+        {
+            int a = r.nextInt(cards.size());
+            int b = r.nextInt(cards.size());
+            
+            Card cardA = cards.get(a);
+            Card cardB = cards.get(b);
+            
+            cards.set(a, cardB);
+            cards.set(b, cardA);
+            
+        }
+        
+    }
+}
+============================================
+C:\Users\User\Desktop\A4WithGUI\src\./FollowListener.java
+/*
+ * CSCI213 Assignment 3
+ * --------------------------
+ * File name: FollowListener.java
+ * Author: V Prathyaksha
+ * Student Number: 5283048
+ * Description: Action Listener for player
+ * to decide if he wants to follow or not
+ */
+
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.event.*;
+import javax.swing.*;
+
+public class FollowListener implements ActionListener{
+	JLabel question = new JLabel("Do you want to follow? [Y/N]: ");
+	JTextField answer = new JTextField("", 3);
+	JButton submit = new JButton("Enter");
+	String ans;
+	JPanel following = new JPanel();
+	
+	Font customFont = new Font("Serif", Font.PLAIN, 32);
+	
+	public FollowListener() {
+		
+		following.setBackground(Color.pink);
+		
+		question.setFont(customFont);
+		answer.setFont(customFont);
+		submit.setFont(customFont);
+		
+		following.add(question);
+		following.add(answer);
+		following.add(submit);
+		
+		answer.addActionListener(this);
+		submit.addActionListener(this);
+	}
+
+
+
+	@Override
+	public void actionPerformed(ActionEvent event) {
+		
+		ans = answer.getText();
+		setAns(ans);
+	}
+
+	public String getAns() {
+		return ans;
+	}
+	public void setAns(String ans) {
+		this.ans = ans;
+	}
+
+}
+============================================
+C:\Users\User\Desktop\A4WithGUI\src\./GameController.java
+/*
+ * CSCI213 Assignment 3
+ * --------------------------
+ * File name: GameContoller.java
+ * Author: V Prathyaksha
+ * Student Number: 5283048
+ * Description: Plays one round of the game, 
+ * includes miscellaneous functions required
+ * for that one round
+ */
+import java.awt.*;
+import java.util.*;
+import javax.swing.*;
+
+public class GameController{
+	GameView view;
+	private Dealer dealer;
+	private ArrayList<GamePlayerInterface> players;
+	static int betOnTable = 0;
+	int result = 0;
+	int DELAY = 60;
+	int counter = 0;
+	
+	Font customFont = new Font("Serif", Font.BOLD, 40);
+	Font labelFont = new Font("Serif", Font.PLAIN, 35);
+	Font generalFont = new Font("Serif", Font.PLAIN, 25);
+	Font roundFont = new Font("Serif", Font.BOLD, 25);
+	Font lineFont = new Font("Serif", Font.PLAIN, 30);
+	
+	JPanel playerPanel = new JPanel();
+	JPanel mainPanel = new JPanel();
+	JPanel loopPanel = new JPanel();
+	
+	BoxLayout boxPlayer = new BoxLayout(playerPanel, BoxLayout.Y_AXIS);
+	BoxLayout boxLoop = new BoxLayout(loopPanel, BoxLayout.Y_AXIS);
+	
+	String blank = "                    ";
+	String line = "-----------------------------------------------------------------------------";
+	
+	public GameController(GameView view, Dealer dealer,
+			ArrayList<GamePlayerInterface> players) {
+		this.view = view;
+		this.dealer = dealer;
+		this.players = players;
+	}
+	
+	// play game for one round
+	public int run() {
+		
+		/*
+		// ScrollBar for loopPanel only
+		JScrollBar loopPane = new JScrollBar(JScrollBar.VERTICAL,0,40,0,100);
+		int height = loopPane.getPreferredSize().height;
+		loopPane.setPreferredSize(new Dimension(30, height));
+		// ScrollBar ends here
+		*/
+		
+		playerPanel.setLayout(boxPlayer);
+		loopPanel.setLayout(boxLoop);
+		
+		mainPanel.setBackground(Color.lightGray);
+		
+		// Start game AND dealers shuffle cards
+		JLabel start = new JLabel(blank + "WELCOME TO HIGH SUM GAME:- START");
+		start.setFont(customFont);
+		
+		view.add(mainPanel);
+		
+		BoxLayout mainBox = new BoxLayout(mainPanel, BoxLayout.Y_AXIS);
+		mainPanel.setLayout(mainBox);
+		mainPanel.setPreferredSize(new Dimension(2500,100));
+		loopPanel.setPreferredSize(new Dimension(300,200));
+
+		mainPanel.add(start);
+		
+		view.contentPane.add("North", mainPanel);
+		dealer.shuffleCards();
+		
+		int numOfCards = 0;
+		int numOfRounds = 1;
+		
+		JLabel lineLabel = new JLabel(line);
+		lineLabel.setFont(lineFont);
+		
+		while(numOfRounds < 5){
+			loopPanel.add(lineLabel);
+			
+			// Dealer dealing cards to players
+			JLabel dealing = new JLabel("Dealer dealing cards - ROUND " + numOfRounds);
+			dealing.setFont(roundFont);
+			loopPanel.add(dealing);
+			
+			numOfRounds++;
+			
+			// First round --> face down for each player
+			if(numOfCards == 0){
+				
+				for (GamePlayerInterface player : players) {
+					// take out card from dealer and give it to player
+					Card card = dealer.dealCard();
+					player.addCard(card);
+					numOfCards++;
+				}
+
+				view.contentPane.add("Center", loopPanel);
+			}
+			
+			int currentPDvalue[] = new int[2];
+			String currentPDname[] = new String[2];
+			String currentPDsuit[] = new String[2];
+			int x = 0;
+			
+			// Second card onwards
+			for (GamePlayerInterface player : players) {
+				// take out card from dealer and give it to player
+				Card card = dealer.dealCard();
+				player.addCard(card);
+				
+				currentPDvalue[x] = card.getValue();
+				currentPDname[x] = card.getName();
+				currentPDsuit[x] = card.getSuit();
+				x++;
+				
+				numOfCards++;					
+			}
+			
+			for(GamePlayerInterface player : players){
+				view.showPlayerCards(player);
+				JLabel lineLabel2 = new JLabel(line);
+				
+				if(player == players.get(0)){
+
+					view.playerPanel.add(lineLabel2);
+				}else{
+					view.dealerPanel.add(lineLabel2);
+				}
+			}
+			
+			view.revalidate();
+			view.repaint();
+			
+			// Check which card is higher
+			int PDbig = 0;
+			PDbig = compareBigger(currentPDvalue[0], currentPDvalue[1], currentPDsuit[0], 
+									currentPDsuit[1], currentPDname[0],currentPDname[1]);
+			
+            view.revalidate();
+			view.repaint();
+			
+			// Do any betting by either Player or Dealer
+			boolean ifContinue = true;
+			ifContinue = displayBet(PDbig, players);
+			
+			view.revalidate();
+			view.repaint();
+			
+			if(!ifContinue){
+				result = 1;
+				break;
+			}
+		}
+		
+		//assume human player is always the first in the arraylist
+		GamePlayerInterface player = players.get(0);
+				
+		loopPanel.add(lineLabel);
+		
+		JLabel noGame = new JLabel("Only 3 possibilities. Contact admin for assistance!");
+		noGame.setFont(generalFont);
+		
+		// Determines who the winner is
+		result = determineWinning(player, dealer);
+		int totalChips = players.get(0).getChips();
+		switch(result){
+		case 0: totalChips = (players.get(0).getChips()) + (betOnTable/2);
+				players.get(0).setChips(totalChips);
+				return totalChips;
+		case 1: break;
+		case 2:	totalChips = (players.get(0).getChips()) + betOnTable;
+				players.get(0).setChips(totalChips);
+				return totalChips;
+		default: loopPanel.add(noGame);
+		}
+
+		JLabel playerTotal = new JLabel("Total chips for Player is: " + totalChips);
+		playerTotal.setFont(generalFont);
+		loopPanel.add(playerTotal);
+		
+		JLabel EoG = new JLabel("End of Game");
+		EoG.setFont(customFont);
+		loopPanel.add(EoG);
+		//end of one game
+		
+		//show dealer's hidden card
+		view.showAllPlayerCard(players.get(1), loopPanel);
+		
+		// Remove cards from previous arrays and re-add to original deck
+		for(GamePlayerInterface p : players){
+			recreateDeck(p);
+		}
+        
+        try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+        
+		view.setVisible(true);
+        
+		return totalChips;
+	}
+	
+	// return 1 Dealer win, 2 for Player win, else for Draw
+	private int determineWinning(GamePlayerInterface player, GamePlayerInterface dealer)
+    {
+        
+         int playerValue = player.getTotalCardsValue();
+         int dealerValue = dealer.getTotalCardsValue();
+         int result = 0;
+         
+         if(dealerValue > playerValue)
+         {
+        	 JLabel dealerWin = new JLabel("Dealer Wins");
+     		 dealerWin.setFont(generalFont);
+     		 loopPanel.add(dealerWin);
+        	 result = 1;
+         }
+         
+         else if(dealerValue < playerValue)
+         {
+        	 JLabel playerWin = new JLabel("Player Wins");
+     		 playerWin.setFont(generalFont);
+     		 loopPanel.add(playerWin);
+        	 result = 2;
+         }
+         
+         else{
+        	 JLabel matchDraw = new JLabel("Match Draw!");
+        	 matchDraw.setFont(generalFont);
+     		 loopPanel.add(matchDraw);
+         }
+         
+         return result;
+    }	
+	public int compareBigger(int pValue, int dValue, String pSuit, 
+								String dSuit, String pName, String dName){
+		int num = 0;
+		
+		// To check P and D value
+		if(pValue > dValue){
+			num = 0;
+		}
+		else if(pValue < dValue){
+			num = 1;
+		}
+		
+		// To check P and D suit (value is equal)
+		if (getSuitValue(pSuit) > getSuitValue(dSuit)){
+			num = 0;
+		}
+		else if (getSuitValue(pSuit) < getSuitValue(dSuit)){
+			num = 1;
+		}
+		
+		// To check P and D name (value and suit are equal)
+		if (getNameValue(pName) > getNameValue(dName)){
+			num = 0;
+		}
+		else if (getNameValue(pName) < getNameValue(dName)){
+			num = 1;
+		}
+		if(num == 0){
+			JLabel message = new JLabel("Player value is bigger");
+			message.setFont(generalFont);
+			loopPanel.add(message);
+		}
+		else if(num == 1){
+			JLabel message = new JLabel("Dealer value is bigger");
+			message.setFont(generalFont);
+			loopPanel.add(message);
+		}
+		else{
+			System.out.println("");
+		}
+		view.revalidate();
+		view.repaint();
+		return num;
+	}
+	public int getSuitValue(String pdSuit){	
+		int pxValue = 0;
+		switch(pdSuit){	
+			case "Spade":	pxValue = 4;
+			case "Heart":	pxValue = 3;
+			case "Club":	pxValue = 2;
+			case "Diamond":	pxValue = 1;
+			default:	pxValue = 0;
+		}
+		return pxValue;	
+	}	
+	public int getNameValue(String pdName){	
+		int pxName = 0;
+		switch(pdName){	
+			case "10":	pxName = 4;
+			case "J":	pxName = 3;
+			case "Q":	pxName = 2;
+			case "K":	pxName = 1;
+			default:	pxName = 0;
+		}
+		return pxName;	
+	}	
+	public boolean displayBet(int PDbig, ArrayList<GamePlayerInterface> players){
+		
+		loopPanel.revalidate();
+		loopPanel.repaint();
+		
+		boolean isContinue = true;
+		int currentBet = 0;
+		
+		int max = players.get(0).getChips();
+		if(max < 0){
+			isContinue = false;
+		}
+		
+		JLabel maxChipsMessage = new JLabel("Maximum number of chips allowed to bet is: " + max);
+		maxChipsMessage.setFont(generalFont);
+		loopPanel.add(maxChipsMessage);
+		
+		if(PDbig == 1){
+			Random r = new Random();
+			currentBet = r.nextInt(max);
+			
+			if(currentBet <= 0){
+				isContinue = false;
+			}
+			
+			String stateBet = "Dealer call, state bet: " + currentBet;
+			JLabel dealerCallStateBet = new JLabel(stateBet);
+			dealerCallStateBet.setFont(generalFont);
+			view.infoPanel.revalidate();
+			view.infoPanel.repaint();
+			loopPanel.add(dealerCallStateBet);
+			
+			String toFollow = "";
+            FollowListener follow = new FollowListener();
+            view.infoPanel.revalidate();
+			view.infoPanel.repaint();
+			view.infoPanel.add(follow.following);
+			try {
+                    do{
+                        Thread.sleep(1000);
+                    }while(follow.getAns() == null);
+				
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			
+			toFollow = follow.getAns();
+			char chFollow = toFollow.charAt(0);
+			
+			
+			if((chFollow == 'Y') || (chFollow == 'y')){
+			}
+			else{
+				isContinue = false;
+			}
+
+			view.infoPanel.remove(follow.following);
+            view.infoPanel.revalidate();
+            view.infoPanel.repaint();
+		}
+		
+		else{
+			String toContinue = "";
+			PromptListener prompt = new PromptListener();
+			view.infoPanel.revalidate();
+			view.infoPanel.repaint();
+			view.infoPanel.add(prompt.prompting);
+            view.infoPanel.revalidate();
+			view.infoPanel.repaint();
+			try {
+	                do{
+	                    Thread.sleep(1000);
+	                }while(prompt.getAns() == null);
+			
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			
+			toContinue = prompt.getAns();
+			char chContinue = toContinue.charAt(0);
+
+			if((chContinue == 'C') || (chContinue == 'c')){
+				view.infoPanel.revalidate();
+				view.infoPanel.repaint();
+				
+				BetListener bet = new BetListener();
+
+
+				view.infoPanel.revalidate();
+				view.infoPanel.repaint();
+				
+				view.infoPanel.add(bet.betting);
+
+				try {
+					do{
+	                    Thread.sleep(500);
+                    }while(bet.getBetAmount() == 0);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				
+				currentBet = bet.getBetAmount();
+			}
+			else{
+				isContinue = false;
+			}
+		}
+		
+		view.infoPanel.removeAll();
+        view.infoPanel.revalidate();
+        view.infoPanel.repaint();
+
+		
+		betOnTable = betOnTable + (2 * currentBet);
+		JLabel tableBet = new JLabel("Current bet on table: " + betOnTable);
+		tableBet.setFont(generalFont);
+		loopPanel.add(tableBet);
+		
+		players.get(0).deductChips(currentBet);
+		players.get(1).deductChips(currentBet);
+		
+		if(players.get(0).getChips() < 0){	
+			
+			JLabel notEnough = new JLabel("Insufficient chips");
+			notEnough.setFont(generalFont);
+			loopPanel.add(notEnough);
+			
+			players.get(0).setChips(0);
+			isContinue = false;
+		}
+		
+		String leftWith = players.get(0).getLoginName() + "'s chips left: " + players.get(0).getChips();
+		JLabel notEnough = new JLabel(leftWith);
+		notEnough.setFont(generalFont);
+		loopPanel.add(notEnough);
+
+		return isContinue;
+	}	
+	public void recreateDeck(GamePlayerInterface player){
+		for(int i = 0; i < player.getNumberOfCardsOnHand(); i++){
+			dealer.deck.appendCard(player.getCardsOnHand().get(i));
+		}
+		player.clearCardsOnHand();
+	}
+}
+============================================
+C:\Users\User\Desktop\A4WithGUI\src\./GameModule.java
+/*
+ * CSCI213 Assignment 3
+ * --------------------------
+ * File name: GameModule.java
+ * Author: V Prathyaksha
+ * Student Number: 5283048
+ * Description: Does login and setting of player
+ * before start of game
+ */
+
+import java.util.*;
+import javax.swing.*;
+
+//@SuppressWarnings("serial")
+public class GameModule extends JPanel{
+
+	JPanel pnl = new JPanel();
+	JLabel gameLabel;
+	static char chGame;
+	
+	public void run(){
+		String playerUsername;
+		
+
+		ViewTransmitter tx = new ViewTransmitter();
+		GameView view = new GameView(tx);
+		
+		PlayersData playerdata = new PlayersData();
+		
+		PlayerLoginListener login = new PlayerLoginListener();
+		try {
+			do{
+				Thread.sleep(1000);
+			}while(login.getPlayerUser() == null && login.getPlayerPass() == null);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
+		playerUsername = login.getPlayerUser();
+		
+		int i = 0;
+		i = playerdata.checkWhichNumber(playerUsername);
+		
+		// Create the human player
+		GamePlayer humanPlayer = new GamePlayer(playerdata.playerList.get(i).getLoginName(), playerdata.playerList.get(i).getHashedPassword(), 
+												playerdata.playerList.get(i).getChips(), playerdata.playerList.get(i).getName(),
+												playerdata.playerList.get(i).getEmail(), playerdata.playerList.get(i).getBirthdate());
+		
+		BrainInterface humanBrain = new HumanBrain();
+		humanPlayer.setBrain(humanBrain);
+		
+		BrainInterface dealerBrain = new GotBrain();	
+
+		//create dealer
+		Dealer dealer = new Dealer();
+		dealer.setBrain(dealerBrain);
+		
+		ArrayList<GamePlayerInterface> players = new ArrayList<GamePlayerInterface>();
+		players.add(humanPlayer);
+		players.add(dealer);	
+		
+		//this will run one game
+		GameController controller = new GameController(view,dealer,players);
+		
+		//return 1 for draw 2 for loss 3 for win
+		do{
+	        view.playerPanel.removeAll();
+	        view.playerPanel.revalidate();
+	        view.playerPanel.repaint();
+	        
+	        view.dealerPanel.removeAll();
+	        view.dealerPanel.revalidate();
+	        view.dealerPanel.repaint();
+	        
+			int result = controller.run();
+			
+			view.infoPanel.revalidate();
+			view.infoPanel.repaint();
+			
+			// Write into file
+			playerdata.playerList.get(i).setChips(result);
+			playerdata.updatePlayerDataToFile();
+						
+			String toGame = "";
+            NewGameListener game = new NewGameListener();
+			controller.view.infoPanel.add(game.gaming);
+			try{
+                do{
+                    Thread.sleep(1000);
+                }while(game.getAns() == null);
+			
+			} catch (InterruptedException e) {
+			e.printStackTrace();
+			}
+		toGame = game.getAns();
+		System.out.println(toGame);
+		chGame = toGame.charAt(0);
+		System.out.println(chGame);
+		
+		view.infoPanel.remove(game.gaming);
+        view.infoPanel.revalidate();
+        view.infoPanel.repaint();
+        
+		controller.mainPanel.removeAll();
+		controller.mainPanel.revalidate();
+		controller.mainPanel.repaint();
+        
+		controller.loopPanel.removeAll();
+		controller.loopPanel.revalidate();
+		controller.loopPanel.repaint();
+        
+		}while((chGame == 'Y') || (chGame == 'y'));
+	}
+}
+============================================
+C:\Users\User\Desktop\A4WithGUI\src\./GamePlayer.java
+/*
+ * CSCI213 Assignment 2
+ * --------------------------
+ * File name: GamePlayer.java
+ * Author: V Prathyaksha
+ * Student Number: 5283048
+ * Description: For every player created, the
+ * functions to modify the individual records,
+ * especially related to the cards in the 
+ * arraylist
+ */
+ 
+import java.util.*;
+
+public class GamePlayer extends Player implements GamePlayerInterface{
+
+	private ArrayList<Card> cardsOnHand;
+	private boolean stand;
+	private boolean isHuman;
+	private BrainInterface brain;
+	
+	public GamePlayer(String loginName, String hashedPassword, int chips,boolean isHuman,
+							String name, String email, String birthdate) {
+
+		super(loginName, hashedPassword, chips, name, email, birthdate);
+		this.isHuman = isHuman;
+		cardsOnHand = new ArrayList<Card>();
+		stand = false;
+		
+	}
+	public GamePlayer(String loginName, String hashedPassword, int chips,
+			String name, String email, String birthdate) {
+
+		super(loginName, hashedPassword, chips, name, email, birthdate);
+		this.isHuman = true;
+		cardsOnHand = new ArrayList<Card>();
+		stand = false;
+		
+	}
+	public void setChips(int chips)
+    {
+        this.chips = chips;
+    }
+	public int getChips()
+    {
+        return chips;
+    }
+	public void setBrain(BrainInterface brain) {
+		this.brain = brain;
+	}
+	public void addCard(Card card) {
+		cardsOnHand.add(card);
+	}
+	public void deductChips(int chips)
+    {
+        this.chips-=chips;
+    }
+	public int getTotalCardsValue() {
+		int totalValue = 0;
+
+		for (Card c : cardsOnHand) {
+
+			totalValue += c.getValue();
+		}
+		
+		return totalValue;
+	}
+	public ArrayList<Card> getCardsOnHand() {
+
+		return cardsOnHand;
+
+	}
+	public int getNumberOfCardsOnHand(){
+		
+		return cardsOnHand.size();
+	}
+	public void clearCardsOnHand() {
+		cardsOnHand.clear();
+	}
+	public char nextMove(){
+		//no error check here
+        return brain.nextMove(getTotalCardsValue());
+    }
+	public void setStand(){
+		stand = true;
+	}
+	public boolean isStand(){
+		return stand;
+	}
+	public boolean isHuman(){
+		return isHuman;
+	}
+}
+============================================
+C:\Users\User\Desktop\A4WithGUI\src\./GamePlayerInterface.java
+/*
+ * CSCI213 Assignment 2
+ * --------------------------
+ * File name: GamePlayerInterface.java
+ * Author: V Prathyaksha
+ * Student Number: 5283048
+ * Description: An interface to implement
+ * the functions in GamePlayer
+ */import java.util.ArrayList;
+
+public interface GamePlayerInterface {
+	
+	public void addCard(Card card);
+	public int getTotalCardsValue();
+	public ArrayList<Card> getCardsOnHand();
+	public void clearCardsOnHand();
+	public char nextMove();
+	public String getLoginName();
+	public void setStand();
+	public boolean isStand();
+	public boolean isHuman();
+	public int getNumberOfCardsOnHand();
+	public void setChips(int chips);
+	public int getChips();
+	public void deductChips(int chips);
+	
+}
+============================================
+C:\Users\User\Desktop\A4WithGUI\src\./GameServer.java
+public class GameServer {
+
+	private GameServerViewerThread viewer; 
+	private GameServerPlayerThread player;
+	
+	public GameServer() {}
+
+	AdminData admindata = new AdminData();
+	
+	public void run() {
+		
+		// Admin login
+		String adminUsername, adminPassword;
+		boolean isAccount = false;
+		
+		do{
+			adminUsername = Keyboard.readString("Enter Login name: ");
+			adminPassword = Keyboard.readString("Enter Password: ");
+			
+			isAccount = admindata.checkAccount(adminUsername, adminPassword);
+			
+		}while(isAccount);
+		
+		BroadCaster broadCaster = new BroadCaster();
+		
+		//A thread to let viewers connect in
+		viewer = new GameServerViewerThread(broadCaster);
+		viewer.start();
+		
+		//A thread to let player connect in
+		player = new GameServerPlayerThread(broadCaster,this);
+		player.start();		
+	}
+	
+	
+	public void endGameServerViewerThread(){
+		viewer.end();
+	}
+	
+
+	public static void main(String[] args) {
+		new GameServer().run();
+	}
+
+}
+============================================
+C:\Users\User\Desktop\A4WithGUI\src\./GameServerPlayerThread.java
+import java.io.*;
+import java.net.*;
+
+public class GameServerPlayerThread extends Thread {
+
+	private static final int DEFAULT_PORT = 4445;
+	private BroadCaster broadcaster;
+	private ServerSocket reception_socket;
+	private Socket client_socket;
+	private GameServer gameServer;
+	
+	public GameServerPlayerThread(BroadCaster broadcaster, GameServer gameServer) {
+		this.broadcaster = broadcaster;
+		this.gameServer = gameServer; 
+	}
+
+	public void run() {
+		int port = DEFAULT_PORT;
+                try {
+			reception_socket = new ServerSocket(port);
+			System.out.println("Started server on port:" + port);
+		} catch (IOException io) {
+			System.out.println("Cannot create server socket");
+			System.exit(0);
+		}
+
+                while(true){
+                    
+
+		// only take in one player socket
+		try {
+			client_socket = reception_socket.accept();
+			new Thread(new GameViewerTransmitter(client_socket)).start();
+		} catch (IOException ex) {
+			System.out.println("Problem accepting client socket");
+		}
+                }
+		
+
+		//handleClient(client_socket);
+
+	}
+
+	private void handleClient(Socket sock) {
+
+		// Get input and output stream
+		ObjectInputStream requests = null;
+		//ObjectOutputStream responses = null;
+		try {
+			//responses = new ObjectOutputStream(sock.getOutputStream());
+			//responses.flush();
+			requests = new ObjectInputStream(sock.getInputStream());
+		} catch (IOException io) {
+			System.out.println("Cannot open stream");
+			try {
+				sock.close();
+			} catch (Exception e) {
+			}
+			return;
+		}
+
+		boolean state = true;
+		while (state) {
+
+			try {
+
+				Message message = (Message) requests.readObject();
+				if (message.getControl().equals("Message")) {
+					//sent player message to all viewers
+					broadcaster.newMessage(message);
+				}else if(message.getControl().equals("Quit")){
+					
+					state = false;
+				}
+
+			} catch (ClassNotFoundException | IOException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		end();
+		System.out.println("GameServerPlayerThread ends");
+
+	}
+
+	
+	private void end(){
+
+		gameServer.endGameServerViewerThread();
+		
+		try {
+			reception_socket.close();
+			client_socket.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+
+	}
+        
+        class HandleClient implements Runnable{
+            public HandleClient(Socket sock){
+                // Get input and output stream
+		ObjectInputStream requests = null;
+		//ObjectOutputStream responses = null;
+		try {
+			//responses = new ObjectOutputStream(sock.getOutputStream());
+			//responses.flush();
+			requests = new ObjectInputStream(sock.getInputStream());
+		} catch (IOException io) {
+			System.out.println("Cannot open stream");
+			try {
+				sock.close();
+			} catch (Exception e) {
+			}
+			return;
+		}
+
+		boolean state = true;
+		while (state) {
+
+			try {
+
+				Message message = (Message) requests.readObject();
+				if (message.getControl().equals("Message")) {
+					//sent player message to all viewers
+					broadcaster.newMessage(message);
+				}else if(message.getControl().equals("Quit")){
+					
+					state = false;
+				}
+
+			} catch (ClassNotFoundException | IOException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		end();
+		System.out.println("GameServerPlayerThread ends");
+
+                
+            }
+
+        @Override
+        public void run() {
+        }
+            
+        }
+	
+}
+============================================
+C:\Users\User\Desktop\A4WithGUI\src\./GameServerViewerThread.java
+import java.io.*;
+import java.net.*;
+
+public class GameServerViewerThread extends Thread {
+
+	private static final int DEFAULT_PORT = 4444;
+	private BroadCaster broadcaster;
+	private boolean state;
+	private ServerSocket reception_socket;
+    private int totalclients = 0;
+	
+	public GameServerViewerThread(BroadCaster broadCaster) {
+		this.broadcaster = broadCaster;
+		state = true;
+	}
+
+	public void run() {
+		int port = DEFAULT_PORT;
+
+		try {
+			reception_socket = new ServerSocket(port);
+			System.out.println("Started server on port:" + port);
+		} catch (IOException io) {
+			System.out.println("Cannot create server socket");
+			System.exit(0);
+		}
+
+		while(state) {
+			Socket client_socket = null;
+
+			try {
+				client_socket = reception_socket.accept();
+                totalclients += 1;
+                System.out.println(client_socket.toString());
+                System.out.println("Total Viewers : "+totalclients);
+                new Thread(new GameViewerTransmitter(client_socket)).start();
+				//GameViewerTransmitter new GameViewerTransmitter(client_socket);
+				//broadcaster.addClient(client);
+			}catch(SocketException se){
+				//closing the reception_socket will cause this exception to be thrown
+				state = false;
+				broadcaster.removeAllClient();
+			} catch (IOException ex) {
+				System.out.println("Problem accepting client socket");
+			}
+		}
+		end();
+		System.out.println("GameServerViewerThread ends");	
+	}
+
+	public void end(){
+		try {
+			reception_socket.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+}
+============================================
+C:\Users\User\Desktop\A4WithGUI\src\./GameView.java
+/*
+ * CSCI213 Assignment 2
+ * --------------------------
+ * File name: GameView.java
+ * Author: V Prathyaksha
+ * Student Number: 5283048
+ * Description: Does all display related functions
+ */
+import java.util.*;
+import java.awt.*;
+import javax.swing.*;
+
+@SuppressWarnings("serial")
+public class GameView extends JFrame{
+	
+	private ViewTransmitter tx;
+	
+	Deck deck = new Deck();
+	JPanel cardPanel = new JPanel();
+	Font customFont = new Font("Serif", Font.PLAIN, 32);
+	Font dpFont = new Font("Serif", Font.PLAIN, 27);
+	FlowLayout flow = new FlowLayout();
+	JPanel titleDealerPanel = new JPanel();
+	JPanel titlePlayerPanel = new JPanel();
+	
+	Container contentPane = getContentPane();
+	
+	JPanel dealerPanel = new JPanel();
+	JPanel playerPanel = new JPanel();
+	JPanel infoPanel = new JPanel();
+	
+	public GameView(ViewTransmitter tx){
+		this.tx = tx;
+		
+		JLabel dealerLabel = new JLabel("Dealer");
+		dealerLabel.setFont(dpFont);
+		dealerLabel.setBorder(BorderFactory.createEmptyBorder(10,50,10,50));
+		dealerPanel.setBorder(BorderFactory.createEmptyBorder(20,30,30,30));
+		dealerPanel.add(dealerLabel);
+
+		JLabel playerLabel = new JLabel("Player");
+		playerLabel.setBorder(BorderFactory.createEmptyBorder(10,50,10,50));
+		playerPanel.setBorder(BorderFactory.createEmptyBorder(20,30,30,30));
+		playerLabel.setFont(dpFont);
+		playerPanel.add(playerLabel);
+		
+		// Set size of overall frame
+		setPreferredSize(new Dimension(1300,1365));
+		
+		infoPanel.setBackground(Color.lightGray);
+		dealerPanel.setBackground(Color.pink);
+		playerPanel.setBackground(Color.pink);
+		
+		infoPanel.setPreferredSize(new Dimension(2500,100));
+		dealerPanel.setPreferredSize(new Dimension(250,700));
+		playerPanel.setPreferredSize(new Dimension(250,700));
+		
+		contentPane.add("South", infoPanel);
+		contentPane.add("West", dealerPanel);
+		contentPane.add("East", playerPanel);
+		
+		setDefaultCloseOperation(EXIT_ON_CLOSE);
+		
+		pack();
+		
+		
+	}
+
+	public void displayIntro(){
+		
+		String s = "Game Starts\nDealer shuffles cards";
+		System.out.println(s);
+		tx.sentMessage(s);
+	}
+	public void displayRound(int round){
+		String s = "Dealer dealing cards - ROUND " + round + "\n";
+		System.out.println(s);
+		tx.sentMessage(s);
+	}
+	public void displayGetChips(int chips){
+		String s = "Player has " + chips + " chips";
+		System.out.println(s);
+		tx.sentMessage(s);
+	}
+	public void printChips(int chips){
+		String s = "Total chips for Player is: " + chips + "\n";;
+		System.out.println(s);
+		tx.sentMessage(s);
+	}
+	public void displayEnding(){
+		String s = "Thank you for playing odd and even game";
+		System.out.println(s);
+		tx.sentMessage(s);
+	}
+	public void print(String s){
+		System.out.println(s);
+		tx.sentMessage(s);
+	}
+	public void updateTable(ArrayList<GamePlayerInterface> players, GamePlayerInterface player){
+		
+		for(GamePlayerInterface p: players){
+			
+			if(!p.getLoginName().equals(player.getLoginName()))
+					showPlayerCards(p);
+		}
+		
+		showPlayerCards(player);
+	}
+
+	// This will show the hidden card only
+	public void showAllPlayerCard(GamePlayerInterface p, JPanel loopPanel){
+		ArrayList<Card> cardsList = p.getCardsOnHand();
+		JLabel hidden = new JLabel("Dealer's Hidden Card");
+		hidden.setFont(dpFont);
+		loopPanel.add(hidden);
+		loopPanel.add(deck.showCard(cardsList.get(0)));
+		loopPanel.revalidate();
+		loopPanel.repaint();
+	}
+	
+	// This will show all cards, but hidden will remain hidden
+	public void showPlayerCards(GamePlayerInterface player){
+		ArrayList<Card> cards = player.getCardsOnHand();
+		int count = 0;
+		for(Card card:cards){
+			if(!player.isHuman() && count == 0){
+				titleDealerPanel = deck.showCard(card, "Hidden");
+				dealerPanel.add(titleDealerPanel);
+				count++;
+			}
+			else{
+				if(!player.isHuman()){
+					titleDealerPanel = deck.showCard(card);
+					dealerPanel.add(titleDealerPanel);
+				}
+				else{
+					titlePlayerPanel = deck.showCard(card);
+					playerPanel.add(titlePlayerPanel);
+				}
+			}
+		}
+		
+		if(player.isHuman()){
+			String dealingTotal = "Player's current total: " + player.getTotalCardsValue();
+			JLabel dealing = new JLabel(dealingTotal);
+			dealing.setFont(customFont);
+			// infoPanel.add(dealing);
+		}
+		
+		cardPanel.add(deck.subPanelMain);
+		pack();
+		setVisible(true);
+		
+	}
+}
+============================================
+C:\Users\User\Desktop\A4WithGUI\src\./GameViewer.java
+
+import java.net.*;
+import java.io.*;
+
+public class GameViewer {
+
+	private static final int DEFAULT_PORT = 4444;
+	private static final String hostName = "localhost";
+
+	private ObjectInputStream responseStream;
+	private ObjectOutputStream requestStream;
+
+	private InetAddress ina;
+	private Socket s;
+
+	private boolean status;
+
+	public GameViewer(int id) {
+
+		try {
+			ina = InetAddress.getByName(hostName);
+		} catch (UnknownHostException u) {
+			System.out.print("Cannot find host name");
+			System.exit(0);
+		}
+
+		try {
+			s = new Socket(ina, DEFAULT_PORT);
+		} catch (IOException ex) {
+			System.out.print("Cannot connect to host");
+			System.exit(1);
+		}
+
+		// Get I/O streams make the ObjectStreams
+		// for serializable objects
+		try {
+			responseStream = new ObjectInputStream(s.getInputStream());
+			requestStream = new ObjectOutputStream(s.getOutputStream());
+			requestStream.flush();
+		} catch (IOException io) {
+
+			System.out.println("Failed to get socket streams");
+			System.exit(1);
+		}
+
+		this.status = true;
+
+	}
+
+
+	private Receiver rec;
+
+	PlayersData playerdata = new PlayersData();
+	
+	public void run() {
+		
+		// player user login
+		@SuppressWarnings("unused")
+		String playerUsername, playerPassword;
+		@SuppressWarnings("unused")
+		boolean isAccount = false;
+		System.out.println("Starting viewer client");
+		rec = new Receiver();
+		rec.start();
+	}
+
+	private class Receiver extends Thread {
+
+		public void run() {
+                 new GameModule().run(); // Not sure what to do
+
+			while (status) {
+				try {
+                                    
+					Message response = (Message) responseStream.readObject();
+					
+					
+					if(response.getControl().equals("Message"))
+					{
+						System.out.println(response.getAssociatedData());
+					}
+					else if(response.getControl().equals("Quit"))
+					{
+						status = false;
+					}
+				} catch (IOException e) {
+
+					status = false;
+					System.out.println("Stream closed");
+				} catch (ClassNotFoundException e) {
+
+					e.printStackTrace();
+				} 
+			}
+		
+			end();
+			System.out.println("GameViewer ends");
+		}
+		
+		//clean up here
+		public void end(){
+			
+			try {
+				requestStream.close();
+				responseStream.close();
+				s.close();
+			} catch (IOException e){
+				e.printStackTrace();
+			}
+		}
+		
+	}
+	
+
+	public static void main(String[] args) {
+		
+		new GameViewer(1).run();
+	}
+
+
+}
+============================================
+C:\Users\User\Desktop\A4WithGUI\src\./GameViewerTransmitter.java
+
+
+import java.io.*;
+import java.net.*;
+
+public class GameViewerTransmitter implements Runnable{
+
+	private Socket sock;
+	//private ObjectInputStream requests;
+	private ObjectOutputStream responses;
+        
+
+	public GameViewerTransmitter(Socket sock) {
+		this.sock = sock;
+                
+
+		try {
+
+			responses = new ObjectOutputStream(sock.getOutputStream());
+			responses.flush();
+			//requests = new ObjectInputStream(sock.getInputStream());
+
+		} catch (IOException io) {
+			System.out.println("Cannot open stream");
+
+			try {
+				sock.close();
+			} catch (Exception e) {
+			}
+			System.exit(0);
+		}
+
+	}
+
+	public void sentMessage(Message message) {
+
+		try {
+			responses.writeObject(message);
+			responses.flush();
+            responses.reset();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	
+	}
+	
+	
+	public void end() {
+
+		try {
+			responses.close();
+			sock.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+    @Override
+    public void run() {
+    }
+
+    
+}
+============================================
+C:\Users\User\Desktop\A4WithGUI\src\./GotBrain.java
+public class GotBrain implements BrainInterface{
+
+	@Override
+	public char nextMove(int cardsValue) {
+		// TODO Auto-generated method stub
+		char nextMove = 'S';
+
+		//int cardsValue = getTotalCardsValue();
+
+		if (cardsValue < 999) {
+			nextMove = 'H';
+		}
+
+		return nextMove;
+	}
+
+}
+============================================
+C:\Users\User\Desktop\A4WithGUI\src\./HumanBrain.java
+/*
+ * CSCI213 Assignment 2
+ * --------------------------
+ * File name: HumanBrain.java
+ * Author: V Prathyaksha
+ * Student Number: 5283048
+ * Description: Reads input value for H or S
+ * which decides if the player continues the game or not
+ */
+
+public class HumanBrain implements BrainInterface{
+
+	public char nextMove(int cardsValue) {
+		// TODO Auto-generated method stub
+		return  Keyboard.readChar("[H]it or [S]tand >");
+	}
+}
+============================================
+C:\Users\User\Desktop\A4WithGUI\src\./Keyboard.java
+
+public class Keyboard {
+
+  
+  
+  @SuppressWarnings("resource")
+public static String readString(String prompt) {
+    System.out.print(prompt);
+    return new java.util.Scanner(System.in).nextLine();
+  }
+
+  public static int readInt(String prompt) {
+    int input = 0;
+    boolean valid = false;
+    while (!valid) {
+      try {
+        input = Integer.parseInt(readString(prompt));
+        valid = true;
+      } catch (NumberFormatException e) {
+        System.out.println("*** Please enter an integer ***");
+      }
+    }
+    return input;
+  }
+
+  public static double readDouble(String prompt) {
+    double input = 0;
+    boolean valid = false;
+    while (!valid) {
+      try {
+        input = Double.parseDouble(readString(prompt));
+        valid = true;
+      } catch (NumberFormatException e) {
+        System.out.println("*** Please enter a double ***");
+      }
+    }
+    return input;
+  }
+
+  public static float readFloat(String prompt) {
+    float input = 0;
+    boolean valid = false;
+    while (!valid) {
+      try {
+        input = Float.parseFloat(readString(prompt));
+        valid = true;
+      } catch (NumberFormatException e) {
+        System.out.println("*** Please enter a float ***");
+      }
+    }
+    return input;
+  }
+
+  public static long readLong(String prompt) {
+    long input = 0;
+    boolean valid = false;
+    while (!valid) {
+      try {
+        input = Long.parseLong(readString(prompt));
+        valid = true;
+      } catch (NumberFormatException e) {
+        e.printStackTrace();
+        System.out.println("*** Please enter a long ***");
+      }
+    }
+    return input;
+  }
+
+  public static char readChar(String prompt) {
+    char input = 0;
+    boolean valid = false;
+    while (!valid) {
+      String temp = readString(prompt);
+      if (temp.length() != 1) {
+        System.out.println("*** Please enter a character ***");
+      } else {
+        input = temp.charAt(0);
+        valid = true;
+      }
+    }
+    return input;
+  }
+
+  public static boolean readBoolean(String prompt) {
+    boolean valid = false;
+    while (!valid) {
+      String input = readString(prompt);
+      if (input.equalsIgnoreCase("yes") || input.equalsIgnoreCase("y")
+          || input.equalsIgnoreCase("true") || input.equalsIgnoreCase("t")) {
+        return true;
+      } else if (input.equalsIgnoreCase("no") || input.equalsIgnoreCase("n")
+          || input.equalsIgnoreCase("false") || input.equalsIgnoreCase("f")) {
+        return false;
+      } else {
+        System.out.println("*** Please enter Yes/No or True/False ***");
+      }
+    }
+    return false;
+  }
+
+  public static java.util.Date readDate(String prompt) {
+    java.util.Date date = null;
+    boolean valid = false;
+    while (!valid) {
+      try {
+        String input = readString(prompt).trim();
+        if (input.matches("\\d\\d/\\d\\d/\\d\\d\\d\\d")) {
+          int day = Integer.parseInt(input.substring(0, 2));
+          int month = Integer.parseInt(input.substring(3, 5));
+          int year = Integer.parseInt(input.substring(6, 10));
+          java.util.Calendar cal = java.util.Calendar.getInstance();
+          cal.setLenient(false);
+          cal.set(year, month - 1, day, 0, 0, 0);
+          date = cal.getTime();
+          valid = true;
+        } else {
+          System.out.println("*** Please enter a date (DD/MM/YYYY) ***");
+        }
+      } catch (IllegalArgumentException e) {
+        System.out.println("*** Please enter a date (DD/MM/YYYY) ***");
+      }
+    }
+    return date;
+  }
+  
+  private static String quit = "0";
+  
+  public static int getUserOption(String title, String[] menu) {
+    displayMenu(title, menu);
+    int choice = Keyboard.readInt("Enter Choice --> ");
+    while (choice > menu.length || choice < 0) {
+      choice = Keyboard.readInt("Invalid Choice, Re-enter --> ");
+    }
+    return choice;
+  }
+
+  private static void displayMenu(String title, String[] menu) {
+    line(80, "=");
+    System.out.println(title.toUpperCase());
+    line(80, "-");
+    for (int i = 0; i < menu.length; i++) {
+      System.out.println("[" + (i + 1) + "] " + menu[i]);
+    }
+    System.out.println("[" + quit + "] Quit");
+    line(80, "-");
+    }
+  
+  public static void line(int len, String c) {
+    System.out.println(String.format("%" + len + "s", " ").replaceAll(" ", c));
+  }
+}
+============================================
+C:\Users\User\Desktop\A4WithGUI\src\./MainPlayersData.java
+/*
+ * CSCI213 Assignment 2
+ * --------------------------
+ * File name: MainPlayersData.java
+ * Author: V Prathyaksha
+ * Student Number: 5283048
+ * Description: Contains all other miscellaneous 
+ * functions needed to handle the Player data
+ */
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Scanner;
+
+
+// Open players.dat and imports players to playerList arrayList
+public class MainPlayersData{
+    public ArrayList<Player> playerList;
+   
+    public MainPlayersData(){
+    
+	playerList = new ArrayList<Player>();
+    
+    try{
+        Scanner fileScanner = new Scanner(new File("players.dat"));
+        while(fileScanner.hasNextLine())
+        {   
+            String data = fileScanner.nextLine();
+            String [] dataArray = data.split("\\|");
+            String loginName = dataArray[0];
+            String hashedPassword = dataArray[1];
+            String chipsString = dataArray[2];
+            int chips = Integer.parseInt(chipsString);
+            String name = dataArray[3];
+            String email = dataArray[4];
+            String birthdate = dataArray[5];
+            
+            Player p = new Player(loginName,hashedPassword,chips,name,email,birthdate);
+            playerList.add(p);
+        }
+        fileScanner.close();
+	
+	    }
+	    catch(FileNotFoundException ex)
+	    {
+	        System.out.println("players.dat not found.");
+	        
+	    }
+	}
+	public void updateMainPlayersDataToFile()
+	{
+	    try{
+	    
+	        PrintWriter fileOut = new PrintWriter("players.dat");
+	        
+	        for(Player p:playerList)
+	        {
+	            String loginName = p.getLoginName();
+	            String hashedPassword = p.getHashedPassword();
+	            String chipsString = p.getChips()+"";
+	            String name = p.getName();
+	            String email = p.getEmail();
+	            String birthday = p.getBirthdate();
+	            
+	            String format = loginName+"|"+hashedPassword+"|"+chipsString+"|"+name+"|"+email+"|"+birthday;
+	            fileOut.println(format);
+	            
+	        }
+	        
+	        fileOut.close();
+	        
+	    }catch(IOException e)
+	    {
+	        System.out.println("Unable to open players.dat for writing.");
+	        
+	    }
+	    
+	}
+	public Player getPlayer(String loginName)
+	{
+	    Player player=null;
+	    
+	    for(Player p:playerList)
+	        {
+	            if(p.getLoginName().equals(loginName))
+	            {
+	                
+	                player = p;
+	            }
+	            
+	        }
+	    
+	    return player;
+	}
+	public boolean checkAccount(String username, String password){
+		boolean status = true;
+		for(Player p:playerList)
+        {
+			// Check username
+            if(p.getLoginName().equals(username))
+            {
+                // Check password
+            	boolean pwCheck = true;
+            	p.checkPassword(password);
+    	        if(pwCheck){
+    	        	return status;
+    	        }
+    	        else{
+    	        	status = false;
+    	        }
+            }
+            else{
+            	status = false;
+            }
+        }
+		return status;
+	}
+	public int checkWhichNumber(String username){
+		int i = 0;
+		
+		for(Player p : playerList){
+			if(p.getLoginName().equals(username)){
+				return (i);
+			}
+			i++;
+		}
+		System.out.println("Error found at checkWhichNumber() function!"); 
+		return 0;
+	}
+	@Override
+ 	public String toString() {
+		return "MainPlayersData [playerList=" + playerList + ", getClass()=" + getClass() + ", hashCode()=" + hashCode()
+				+ ", toString()=" + super.toString() + "]";
+	}
+}
+============================================
+C:\Users\User\Desktop\A4WithGUI\src\./Message.java
+
+
+import java.io.Serializable;
+
+@SuppressWarnings("serial")
+public class Message implements Serializable{
+
+    private String control;
+    private String associatedData;
+    
+    public Message(String c,String a)
+    {
+        control = c;
+        associatedData = a;
+    }
+
+	public String getControl() {
+		return control;
+	}
+
+	public String getAssociatedData() {
+		return associatedData;
+	}
+    
+}
+============================================
+C:\Users\User\Desktop\A4WithGUI\src\./NewGameListener.java
+/*
+ * CSCI213 Assignment 3
+ * --------------------------
+ * File name: NewGameListener.java
+ * Author: V Prathyaksha
+ * Student Number: 5283048
+ * Description: Action Listener for player
+ * to decide if he wants to play another game
+ * or not
+ */
+
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.event.*;
+import javax.swing.*;
+
+public class NewGameListener implements ActionListener{
+	JPanel gaming = new JPanel();
+	JLabel question = new JLabel("Next Game? (Y/N) > ");
+	JTextField answer = new JTextField("", 3);
+	JButton submit = new JButton("Enter");
+	String ans;
+	
+	Font customFont = new Font("Serif", Font.PLAIN, 32);
+	
+	public NewGameListener() {
+		
+		gaming.setBackground(Color.pink);
+		
+		question.setFont(customFont);
+		answer.setFont(customFont);
+		submit.setFont(customFont);
+		
+		gaming.add(question);
+		gaming.add(answer);
+		gaming.add(submit);
+		
+		answer.addActionListener(this);
+		submit.addActionListener(this);
+	}
+	
+	
+	
+	@Override
+	public void actionPerformed(ActionEvent event) {
+		ans = answer.getText();
+	}
+
+	public String getAns() {
+		return ans;
+	}
+	public void setAns(String ans) {
+		this.ans = ans;
+	}
+
+}
+============================================
+C:\Users\User\Desktop\A4WithGUI\src\./Player.java
+/*
+ * CSCI213 Assignment 2
+ * --------------------------
+ * File name: Player.java
+ * Author: V Prathyaksha
+ * Student Number: 5283048
+ * Description: Has all the getters and setters for each Player
+ */
+
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+
+public class Player extends User {
+    
+    protected int chips;
+    protected String name;
+    protected String email;
+    protected Calendar birthdate;
+    
+    public Player(String loginName,String hashedPassword,int chips, 
+    				String name,String email, String birthdate)
+    {
+        super(loginName,hashedPassword);
+        this.chips=chips;
+        this.name = name;
+        this.email = email;
+
+        String[] dateElements = birthdate.split("-");
+        int year = Integer.parseInt(dateElements[0]);
+        int month = Integer.parseInt(dateElements[1]);
+        int day = Integer.parseInt(dateElements[2]);
+        this.birthdate = new GregorianCalendar(year,month-1,day);
+    }
+    public Player(String loginName,String hashedPassword,int chips, 
+    				String name,String email, Calendar birthdate)
+    {
+        super(loginName,hashedPassword);
+        this.chips=chips;
+        this.name = name;
+        this.email = email;
+        this.birthdate = birthdate;
+    }    
+    public int getChips()
+    {
+        return chips;
+    }
+    public void addChips(int chips)
+    {
+        this.chips+=chips;
+    }
+    public void deductChips(int chips)
+    {
+        this.chips-=chips;
+    }
+    public void setChips(int chips)
+    {
+        this.chips = chips;
+    }
+	public void setBirthdate(Calendar birthdate) {
+		this.birthdate = birthdate;
+	}
+	public String getName() {
+		return name;
+	}
+	public void setName(String name) {
+		this.name = name;
+	}
+	public String getEmail() {
+		return email;
+	}
+	public void setEmail(String email) {
+		this.email = email;
+	}
+	public String getBirthdate(){
+		return birthdate.get(Calendar.YEAR)+"-"+(birthdate.get(Calendar.MONTH)+1)+"-"+birthdate.get(Calendar.DAY_OF_MONTH);
+	}
+}
+============================================
+C:\Users\User\Desktop\A4WithGUI\src\./PlayerLoginListener.java
+/*
+ * CSCI213 Assignment 3
+ * --------------------------
+ * File name: PlayerLoginListener.java
+ * Author: V Prathyaksha
+ * Student Number: 5283048
+ * Description: Action Listener for player 
+ * to login and check password
+ */
+
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.event.*;
+import javax.swing.*;
+
+
+@SuppressWarnings("serial")
+public class PlayerLoginListener extends JFrame implements ActionListener{
+	JPanel pnl = new JPanel();
+	JTextField Username = new JTextField("", 10);
+	JTextField Password = new JTextField("", 10);
+	JButton submit = new JButton("Submit");
+	JLabel lbl1 = new JLabel("Enter Login name: ");
+	JLabel lbl2 = new JLabel("Enter Password: ");
+
+	Font customFont = new Font("Serif", Font.PLAIN, 32);
+
+	PlayersData playerData = new PlayersData();
+
+	boolean isAccount = false;
+	String playerUser, playerPass;
+
+	public PlayerLoginListener(){
+		super("PlayerLoginListener");
+
+		pnl.setBackground(Color.pink);
+
+		add(pnl);
+
+		lbl1.setFont(customFont);
+		lbl2.setFont(customFont);
+
+		pnl.add(lbl1);
+		pnl.add(Username);
+		pnl.add(lbl2);
+		pnl.add(Password);
+		pnl.add(submit);
+
+		Username.addActionListener(this);
+		Password.addActionListener(this);
+		submit.addActionListener(this);
+
+		setVisible(true);
+		pack();
+	}
+	@Override
+	public void actionPerformed(ActionEvent event) {
+
+		playerUser = Username.getText();
+		playerPass = Password.getText();
+
+		setPlayerUser(playerUser);
+		setPlayerPass(playerPass);
+
+		isAccount = playerData.checkAccount(playerUser, playerPass);
+		System.out.println(isAccount);
+		if(isAccount == false){
+			playerData.loginUnsuccessful();
+		}
+		if(isAccount == true){
+			playerData.loginSuccessful();
+		}
+	}
+	public String getPlayerUser() {
+		return playerUser;
+	}
+	public void setPlayerUser(String playerUser) {
+		this.playerUser = playerUser;
+	}
+	public String getPlayerPass() {
+		return playerPass;
+	}
+	public void setPlayerPass(String playerPass) {
+		this.playerPass = playerPass;
+	}
+}
+============================================
+C:\Users\User\Desktop\A4WithGUI\src\./PlayersData.java
+/*
+ * CSCI213 Assignment 2
+ * --------------------------
+ * File name: PlayersData.java
+ * Author: V Prathyaksha
+ * Student Number: 5283048
+ * Description: Contains all other miscellaneous 
+ * functions needed to handle the Player data
+ */
+
+import java.awt.Font;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Scanner;
+
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+
+
+// Open players.dat and imports players to playerList arrayList
+@SuppressWarnings("serial")
+public class PlayersData extends JFrame {
+    public ArrayList<Player> playerList;
+    
+    JPanel pnlNO = new JPanel();
+    JPanel pnlYES = new JPanel();
+    JLabel labelNO = new JLabel("Login NOT successful");
+    JLabel labelYES = new JLabel("Login successful");
+    
+    Font customFont = new Font("Serif", Font.PLAIN, 32);
+   
+    public PlayersData(){
+    
+	playerList = new ArrayList<Player>();
+    
+    try{
+        Scanner fileScanner = new Scanner(new File("players.dat"));
+        while(fileScanner.hasNextLine())
+        {   
+            String data = fileScanner.nextLine();
+            String [] dataArray = data.split("\\|");
+            String loginName = dataArray[0];
+            String hashedPassword = dataArray[1];
+            String chipsString = dataArray[2];
+            int chips = Integer.parseInt(chipsString);
+            String name = dataArray[3];
+            String email = dataArray[4];
+            String birthdate = dataArray[5];
+            
+            Player p = new Player(loginName,hashedPassword,chips,name,email,birthdate);
+            playerList.add(p);
+        }
+        fileScanner.close();
+	
+	    }
+	    catch(FileNotFoundException ex)
+	    {
+	        System.out.println("players.dat not found.");
+	        
+	    }
+	}
+	public void updatePlayerDataToFile()
+	{
+	    try{
+	    
+	        PrintWriter fileOut = new PrintWriter("players.dat");
+	        
+	        for(Player p:playerList)
+	        {
+	            String loginName = p.getLoginName();
+	            String hashedPassword = p.getHashedPassword();
+	            String chipsString = p.getChips()+"";
+	            String name = p.getName();
+	            String email = p.getEmail();
+	            String birthday = p.getBirthdate();
+	            
+	            String format = loginName+"|"+hashedPassword+"|"+chipsString+"|"+name+"|"+email+"|"+birthday;
+	            fileOut.println(format);
+	            
+	        }
+	        
+	        fileOut.close();
+	        
+	    }catch(IOException e)
+	    {
+	        System.out.println("Unable to open players.dat for writing.");
+	        
+	    }
+	    
+	}
+	public Player getPlayer(String loginName)
+	{
+	    Player player=null;
+	    
+	    for(Player p:playerList)
+	        {
+	            if(p.getLoginName().equals(loginName))
+	            {
+	                
+	                player = p;
+	            }
+	            
+	        }
+	    
+	    return player;
+	}
+	public boolean checkAccount(String username, String password){
+		boolean status = true;
+		for(Player p:playerList)
+        {
+			// Check username
+            if(p.getLoginName().equals(username))
+            {
+                // Check password
+            	boolean pwCheck = true;
+            	p.checkPassword(password);
+    	        if(pwCheck){
+    	        	return status;
+    	        }
+    	        else{
+    	        	status = false;
+    	        }
+            }
+            else{
+            	status = false;
+            }
+        }
+		return status;
+	}
+	public int checkWhichNumber(String username){
+		int i = 0;
+		
+		for(Player p : playerList){
+			if(p.getLoginName().equals(username)){
+				return (i);
+			}
+			i++;
+		}
+		System.out.println("Error found at checkWhichNumber() function!"); 
+		return 0;
+	}
+	public boolean loginUnsuccessful(){
+		setSize(500, 200);
+		add(pnlNO);
+		pnlNO.add(labelNO);
+		labelNO.setFont(customFont);
+		setVisible(true);
+		
+		return false;
+	}
+	
+	public boolean loginSuccessful(){
+		setSize(500, 200);
+		add(pnlYES);
+		pnlYES.add(labelYES);
+		labelYES.setFont(customFont);
+		setVisible(true);
+		
+		return true;
+	}
+	
+	
+	@Override
+	public String toString() {
+		return "PlayersData [playerList=" + playerList + ", getClass()=" + getClass() + ", hashCode()=" + hashCode()
+				+ ", toString()=" + super.toString() + "]";
+	}
+}
+============================================
+C:\Users\User\Desktop\A4WithGUI\src\./PromptListener.java
+/*
+ * CSCI213 Assignment 3
+ * --------------------------
+ * File name: PomptListener.java
+ * Author: V Prathyaksha
+ * Student Number: 5283048
+ * Description: Action Listener for player
+ * to either Call or Quit
+ */
+
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.event.*;
+import javax.swing.*;
+
+public class PromptListener implements ActionListener{
+	JPanel prompting = new JPanel();
+	JLabel question = new JLabel("Do you want to [C]all or [Q]uit?: ");
+	JTextField answer = new JTextField("", 3);
+	JButton submit = new JButton("Enter");
+	String ans;
+	
+	Font customFont = new Font("Serif", Font.PLAIN, 32);
+	
+	public PromptListener() {
+		
+		prompting.setBackground(Color.pink);
+		
+		question.setFont(customFont);
+		answer.setFont(customFont);
+		submit.setFont(customFont);
+		
+		prompting.add(question);
+		prompting.add(answer);
+		prompting.add(submit);
+		
+		answer.addActionListener(this);
+		submit.addActionListener(this);
+	}
+
+
+
+	@Override
+	public void actionPerformed(ActionEvent event) {
+		ans = answer.getText();
+	}
+
+	public String getAns() {
+		return ans;
+	}
+	public void setAns(String ans) {
+		this.ans = ans;
+	}
+
+}
+============================================
+C:\Users\User\Desktop\A4WithGUI\src\./User.java
+/*
+ * CSCI213 Assignment 2
+ * --------------------------
+ * File name: User.java
+ * Author: V Prathyaksha
+ * Student Number: 5283048
+ * Description: Has all the getters and setters common for dealer and human player
+ */
+
+abstract public class User {
+    
+    private String loginName;
+    private String hashedPassword;
+    
+    public User(String loginName,String hashedPassword)
+    {
+        this.loginName = loginName;
+        this.hashedPassword = hashedPassword;
+    }
+    public String getLoginName()
+    {
+        return loginName;
+    }
+    public String getHashedPassword()
+    {
+        return hashedPassword;
+    }
+    public void setHashedPassword(String newHashedPassword)
+    {
+        this.hashedPassword = newHashedPassword;
+    }
+    public boolean checkPassword(String password)
+    {
+        boolean status = false;
+        String hPassword = Utility.getHash(password);
+        
+        if(hashedPassword.equals(hPassword))
+        {
+            status = true;
+        }
+        
+        return status;
+    }
+ 
+}
+============================================
+C:\Users\User\Desktop\A4WithGUI\src\./Utility.java
+import java.security.MessageDigest;
+
+public class Utility {
+    
+    public static String getHash(String base)
+    {
+        String message=""; 
+         
+        try{
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] hash = digest.digest(base.getBytes("UTF-8"));
+        StringBuffer hexString = new StringBuffer();
+
+        for (int i = 0; i < hash.length; i++) {
+            String hex = Integer.toHexString(0xff & hash[i]);
+            if(hex.length() == 1) hexString.append('0');
+            hexString.append(hex);
+        }
+
+        message = hexString.toString();
+    
+        } catch(Exception ex){
+             throw new RuntimeException(ex);
+        }
+        
+        return message;
+    }
+     
+    public static void printLine(int num)
+    {
+      printLine(num,'-');
+    }
+     
+    public static void printDoubleLine(int num)
+    {
+        printLine(num,'=');
+    }
+    
+    
+    public static void printLine(int num,char pattern)
+    {
+      for(int i =0;i<num;i++)
+      {
+          System.out.print(pattern);
+      }
+      System.out.println("");
+        
+    }
+    
+}
+============================================
+C:\Users\User\Desktop\A4WithGUI\src\./Viewer2.java
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.UnknownHostException;
+
+public class Viewer2 {
+    private static final int DEFAULT_PORT = 4444;
+	private static final String hostName = "localhost";
+
+	private ObjectInputStream responseStream;
+	private ObjectOutputStream requestStream;
+
+	private InetAddress ina;
+	private Socket s;
+
+	private boolean status;
+
+	public Viewer2(int id) {
+
+		try {
+			ina = InetAddress.getByName(hostName);
+		} catch (UnknownHostException u) {
+			System.out.print("Cannot find host name");
+			System.exit(0);
+		}
+
+		try {
+			s = new Socket(ina, DEFAULT_PORT);
+		} catch (IOException ex) {
+			System.out.print("Cannot connect to host");
+			System.exit(1);
+		}
+
+		// Get I/O streams make the ObjectStreams
+		// for serializable objects
+		try {
+			responseStream = new ObjectInputStream(s.getInputStream());
+			requestStream = new ObjectOutputStream(s.getOutputStream());
+			requestStream.flush();
+		} catch (IOException io) {
+
+			System.out.println("Failed to get socket streams");
+			System.exit(1);
+		}
+
+		this.status = true;
+
+	}
+
+
+	private Receiver rec;
+
+	PlayersData playerdata = new PlayersData();
+	
+	public void run() {
+		
+		// player user login
+		String playerUsername, playerPassword;
+		boolean isAccount = false;
+
+		ViewerLogin vw = new ViewerLogin();
+		System.out.println("Starting viewer client");
+		rec = new Receiver();
+		rec.start();
+	}
+
+	private class Receiver extends Thread {
+
+		public void run() {
+                    new GameModule().run();
+
+			while (status) {
+				try {
+					Message response = (Message) responseStream.readObject();
+					
+					
+					if(response.getControl().equals("Message"))
+					{
+						System.out.println(response.getAssociatedData());
+					}
+					else if(response.getControl().equals("Quit"))
+					{
+						status = false;
+					}
+				} catch (IOException e) {
+
+					status = false;
+					System.out.println("Stream closed");
+				} catch (ClassNotFoundException e) {
+
+					e.printStackTrace();
+				} 
+			}
+		
+			end();
+			System.out.println("GameViewer ends");
+		}
+		
+		//clean up here
+		public void end(){
+			
+			try {
+				requestStream.close();
+				responseStream.close();
+				s.close();
+			} catch (IOException e){
+				e.printStackTrace();
+			}
+		}
+		
+	}
+	
+
+	public static void main(String[] args) {
+		
+		new Viewer2(1).run();
+	}
+
+
+    
+}
+============================================
+C:\Users\User\Desktop\A4WithGUI\src\./ViewerLogin.java
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+@SuppressWarnings("serial")
+public class ViewerLogin extends JFrame implements ActionListener{
+
+    JPanel pnl = new JPanel();
+   static JTextField Username = new JTextField("", 10);
+   static JTextField Password = new JTextField("", 10);
+    JButton submit = new JButton("Submit");
+    JLabel lbl1 = new JLabel("Enter Login name: ");
+    JLabel lbl2 = new JLabel("Enter Password: ");
+
+    Font customFont = new Font("Serif", Font.PLAIN, 32);
+
+
+    /*boolean isAccount = false;
+    String playerUser, playerPass;
+*/
+    public ViewerLogin(){
+        super("ViewerLoginListener");
+
+        pnl.setBackground(Color.pink);
+
+        add(pnl);
+
+        lbl1.setFont(customFont);
+        lbl2.setFont(customFont);
+
+        pnl.add(lbl1);
+        pnl.add(Username);
+        pnl.add(lbl2);
+        pnl.add(Password);
+        pnl.add(submit);
+
+      /*  Username.addActionListener(this);
+        Password.addActionListener(this);
+        submit.addActionListener(this);
+*/
+        submit.addActionListener(this);
+        setVisible(true);
+        pack();
+    }
+    @Override
+    public void actionPerformed(ActionEvent event) {
+
+
+        //ViwerObserving vo = new ViwerObserving();
+        ViewTransmitter tx = new ViewTransmitter();
+        @SuppressWarnings("unused")
+		GameView view = new GameView(tx);
+
+     /*   playerUser = Username.getText();
+        playerPass = Password.getText();
+
+        setPlayerUser(playerUser);
+        setPlayerPass(playerPass);
+
+        isAccount = playerData.checkAccount(playerUser, playerPass);
+        System.out.println(isAccount);
+        if(isAccount == false){
+            playerData.loginUnsuccessful();
+        }
+        if(isAccount == true){
+            playerData.loginSuccessful();
+        }
+    }
+    public String getPlayerUser() {
+        return playerUser;
+    }
+    public void setPlayerUser(String playerUser) {
+        this.playerUser = playerUser;
+    }
+    public String getPlayerPass() {
+        return playerPass;
+    }
+    public void setPlayerPass(String playerPass) {
+        this.playerPass = playerPass; */
+    }
+}
+============================================
+C:\Users\User\Desktop\A4WithGUI\src\./ViewTransmitter.java
+
+
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.UnknownHostException;
+import java.util.Scanner;
+
+public class ViewTransmitter {
+
+	private static final int DEFAULT_PORT = 4445;
+	private static final String hostName = "localhost";
+	private ObjectOutputStream requestStream;
+	private InetAddress ina;
+	private Socket s;
+	Scanner input = new Scanner(System.in);
+
+	public ViewTransmitter() {
+
+		try {
+			ina = InetAddress.getByName(hostName);
+		} catch (UnknownHostException u) {
+			System.out.print("Cannot find host name");
+			System.exit(0);
+		}
+
+		try {
+			s = new Socket(ina, DEFAULT_PORT);
+		} catch (IOException ex) {
+			System.out.print("Cannot connect to host");
+			System.exit(1);
+		}
+
+		try {
+			requestStream = new ObjectOutputStream(s.getOutputStream());
+			requestStream.flush();
+		} catch (IOException io) {
+
+			System.out.println("Failed to get socket streams");
+			System.exit(1);
+		}
+	}
+
+	
+	public void sentMessage(String message){
+		
+		Message m = new Message("Message",message);
+		sentMessage(m);
+	}
+	
+	public void sentMessage(Message message) {
+
+		try {
+
+			requestStream.writeObject(message);
+			requestStream.flush();
+			requestStream.reset();
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+
+	public void end(){
+		
+		Message m = new Message("Quit","");
+		sentMessage(m);		
+		
+		try {
+			requestStream.close();
+			s.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+}
+============================================
+C:\Users\User\Desktop\A4WithGUI\src\./ViwerObserving.java
+import javax.swing.*;
+
+@SuppressWarnings("serial")
+public class ViwerObserving extends JFrame{
+
+    public ViwerObserving(){
+
+        setTitle("Viewers are Observing the Game");
+        setSize(550,550);
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setVisible(true);
+        
+    }
+}
