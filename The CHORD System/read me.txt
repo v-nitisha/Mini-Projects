@@ -1,0 +1,2 @@
+g++ -std=c++11 *.cpp -o CHORD.out
+./CHORD.out myfile.dat 2>output.txt 2>error.txt
