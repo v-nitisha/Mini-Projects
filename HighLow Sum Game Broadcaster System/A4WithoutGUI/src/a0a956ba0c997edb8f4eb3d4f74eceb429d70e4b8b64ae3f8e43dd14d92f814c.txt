@@ -1,0 +1,2129 @@
+============================================
+C:\Users\User\Desktop\A4WithoutGUI\src\./AdminData.java
+/*
+ * CSCI213 Assignment 2
+ * --------------------------
+ * File name: AdminData.java
+ * Author: V Prathyaksha
+ * Student Number: 5283048
+ * Description: Contains all other miscellaneous 
+ * functions needed to handle the Player data
+ */
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Scanner;
+
+
+// Open players.dat and imports players to playerList arrayList
+public class AdminData{
+    public ArrayList<Player> playerList;
+   
+    public AdminData(){
+    
+	playerList = new ArrayList<Player>();
+    
+    try{
+        Scanner fileScanner = new Scanner(new File("players.dat"));
+        while(fileScanner.hasNextLine())
+        {   
+            String data = fileScanner.nextLine();
+            String [] dataArray = data.split("\\|");
+            String loginName = dataArray[0];
+            String hashedPassword = dataArray[1];
+            String chipsString = dataArray[2];
+            int chips = Integer.parseInt(chipsString);
+            String name = dataArray[3];
+            String email = dataArray[4];
+            String birthdate = dataArray[5];
+            
+            Player p = new Player(loginName,hashedPassword,chips,name,email,birthdate);
+            playerList.add(p);
+        }
+        fileScanner.close();
+	
+	    }
+	    catch(FileNotFoundException ex)
+	    {
+	        System.out.println("players.dat not found.");
+	        
+	    }
+	}
+	public void updateAdminDataToFile()
+	{
+	    try{
+	    
+	        PrintWriter fileOut = new PrintWriter("players.dat");
+	        
+	        for(Player p:playerList)
+	        {
+	            String loginName = p.getLoginName();
+	            String hashedPassword = p.getHashedPassword();
+	            String chipsString = p.getChips()+"";
+	            String name = p.getName();
+	            String email = p.getEmail();
+	            String birthday = p.getBirthdate();
+	            
+	            String format = loginName+"|"+hashedPassword+"|"+chipsString+"|"+name+"|"+email+"|"+birthday;
+	            fileOut.println(format);
+	            
+	        }
+	        
+	        fileOut.close();
+	        
+	    }catch(IOException e)
+	    {
+	        System.out.println("Unable to open admin.dat for writing.");
+	        
+	    }
+	    
+	}
+	public Player getPlayer(String loginName)
+	{
+	    Player player=null;
+	    
+	    for(Player p:playerList)
+	        {
+	            if(p.getLoginName().equals(loginName))
+	            {
+	                
+	                player = p;
+	            }
+	            
+	        }
+	    
+	    return player;
+	}
+	public boolean checkAccount(String username, String password){
+		boolean status = true;
+		for(Player p:playerList)
+        {
+			// Check username
+            if(p.getLoginName().equals(username))
+            {
+                // Check password
+            	boolean pwCheck = true;
+            	p.checkPassword(password);
+    	        if(pwCheck){
+    	        	return status;
+    	        }
+    	        else{
+    	        	status = false;
+    	        }
+            }
+            else{
+            	status = false;
+            }
+        }
+		return status;
+	}
+
+	@Override
+ 	public String toString() {
+		return "AdminData [playerList=" + playerList + ", getClass()=" + getClass() + ", hashCode()=" + hashCode()
+				+ ", toString()=" + super.toString() + "]";
+	}
+}
+============================================
+C:\Users\User\Desktop\A4WithoutGUI\src\./BlackJackGame.java
+/*
+ * CSCI213 Assignment 2
+ * --------------------------
+ * File name: BlackJackGame.java
+ * Author: V Prathyaksha
+ * Student Number: 5283048
+ * Description: Runs the whole program
+ */
+ 
+public class BlackJackGame {
+
+	public static void main(String[] args) {
+		
+		new GameModule().run();
+		
+	}
+
+}
+============================================
+C:\Users\User\Desktop\A4WithoutGUI\src\./BrainInterface.java
+
+
+public interface BrainInterface {
+	public char nextMove(int cardsValue); 
+}
+============================================
+C:\Users\User\Desktop\A4WithoutGUI\src\./BroadCaster.java
+
+import java.util.ArrayList;
+
+public class BroadCaster {
+
+	private ArrayList<GameViewerTransmitter> clients;
+	
+	public BroadCaster(){
+		clients = new ArrayList<GameViewerTransmitter>();
+	}
+	public synchronized void newMessage(Message message){
+
+		for(GameViewerTransmitter client: clients){
+			client.sentMessage(message);
+		}
+	}
+	
+	public synchronized void removeAllClient(){
+		
+		//close all the connections
+		for(GameViewerTransmitter client: clients){
+			client.end();
+		}
+		
+		clients.clear();
+	}
+	public synchronized void addClient(GameViewerTransmitter client){
+		clients.add(client);
+	}
+	
+	
+}
+============================================
+C:\Users\User\Desktop\A4WithoutGUI\src\./Card.java
+/*
+ * CSCI213 Assignment 2
+ * --------------------------
+ * File name: Card.java
+ * Author: V Prathyaksha
+ * Student Number: 5283048
+ * Description: Initialized new card from 
+ * Deck.java
+ */
+
+public class Card {
+
+	private String suit;
+	private String name;
+	private int value;
+
+	public Card(String s, String n, int v) {
+		suit = s;
+		name = n;
+		value = v;
+	}
+
+	public String getSuit() {
+		return suit;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public int getValue() {
+		return value;
+	}
+
+	public String toString() {
+		return "<" + suit + " " + name + " " + value + ">";
+	}
+
+}
+============================================
+C:\Users\User\Desktop\A4WithoutGUI\src\./Dealer.java
+/*
+ * CSCI213 Assignment 2
+ * --------------------------
+ * File name: Dealer.java
+ * Author: V Prathyaksha
+ * Student Number: 5283048
+ * Description: Initializes dealer and has 
+ * all the functions a dealer needs such as
+ * shuffling and dealing
+ */
+
+
+public class Dealer extends GamePlayer {
+
+	Deck deck;
+
+	public Dealer() {
+		super("Dealer", "", 0,false, "dName", "dealer@gaming.com", "12-12-2012");
+		deck = new Deck();
+	}
+
+	public void shuffleCards() {
+
+		deck.shuffle();
+	}
+
+	public Card dealCard() {
+		return deck.dealCard();
+	}
+}
+============================================
+C:\Users\User\Desktop\A4WithoutGUI\src\./Deck.java
+/*
+ * CSCI213 Assignment 2
+ * --------------------------
+ * File name: Deck.java
+ * Author: V Prathyaksha
+ * Student Number: 5283048
+ * Description: Initializes and shuffles the cards for one pack
+ */
+
+import java.util.*;
+
+public class Deck {
+    
+    private ArrayList<Card> cards;
+    
+    public Deck()
+    {
+        
+        cards = new ArrayList<Card>();
+                
+        String [] suits = {"Heart","Diamond","Spade","Club"};
+        
+        int jqkValue = 0;
+        
+        for(int n=0;n<suits.length;n++)
+        {
+            String suit = suits[n];
+            Card card;
+            
+            card = new Card(suit,"Ace",1);
+            cards.add(card);
+            
+            jqkValue = 1;
+            if(suit == "Club" | suit == "Spade"){
+            	jqkValue = -1;
+            }
+            
+            for(int i=2;i<=10;i++)
+            {
+                card = new Card(suit,i+"",(i*jqkValue));
+                cards.add(card);
+            }
+
+            jqkValue = 10;
+            if(suit == "Club" | suit == "Spade"){
+            	jqkValue = -10;
+            }
+            card = new Card(suit,"Jack",jqkValue);
+            cards.add(card);
+         
+            card = new Card(suit,"Queen",jqkValue);
+            cards.add(card);
+      
+            card = new Card(suit,"King",jqkValue);
+            cards.add(card);
+        }
+        
+    }
+    
+    public void showCards()
+    {   
+       for(Card card: cards){
+		   // ImageIcon cardImage = new ImageIcon(card.suit + card.name + ".jpg");
+		   // setIcon(cardImage);
+    	   System.out.println(card);
+		   
+		   
+       }
+    }
+    
+    public Card dealCard()
+    {
+        return cards.remove(0);
+    }
+    
+    public void appendCard(Card c)
+    {
+        cards.add(c);
+        
+    }
+    
+    public void appendCards(ArrayList<Card> cards)
+    {  
+    	shuffle(cards);
+        for(Card c: cards)
+            this.cards.add(c);
+        
+    }
+    
+   
+    public void shuffle(){
+    	shuffle(cards);
+    }
+    
+    public void shuffle(ArrayList<Card> cards)
+    {
+        Random r = new Random();
+        for(int i=0;i<cards.size()*1000;i++)
+        {
+            int a = r.nextInt(cards.size());
+            int b = r.nextInt(cards.size());
+            
+            Card cardA = cards.get(a);
+            Card cardB = cards.get(b);
+            
+            cards.set(a, cardB);
+            cards.set(b, cardA);
+            
+        }
+        
+    }
+}
+============================================
+C:\Users\User\Desktop\A4WithoutGUI\src\./GameController.java
+/*
+ * CSCI213 Assignment 2
+ * --------------------------
+ * File name: GameContoller.java
+ * Author: V Prathyaksha
+ * Student Number: 5283048
+ * Description: Plays one round of the game, 
+ * includes miscellaneous functions required
+ * for that one round
+ */
+import java.util.*;
+
+public class GameController {
+
+	private GameView view;
+	private Dealer dealer;
+	private ArrayList<GamePlayerInterface> players;
+	static int betOnTable = 0;
+	int result = 0;
+
+	public GameController(GameView view, Dealer dealer,
+			ArrayList<GamePlayerInterface> players) {
+		this.view = view;
+		this.dealer = dealer;
+		this.players = players;
+	}
+// play game for one round
+	public int run() {
+		// start game
+		// dealers shuffle cards
+		view.displayIntro();
+		view.printLine();
+		
+		dealer.shuffleCards();
+		view.printLine();
+		
+		int numOfCards = 0;
+		int numOfRounds = 1;
+		
+		while(numOfRounds < 5){
+			// Dealer dealing cards to players
+			view.displayRound(numOfRounds);
+			view.printLine();
+			numOfRounds++;
+			// First round --> face down for each player
+			if(numOfCards == 0){
+				for (GamePlayerInterface player : players) {
+					// take out card from dealer and give it to player
+					Card card = dealer.dealCard();
+					player.addCard(card);
+					numOfCards++;
+					// NEED to add total and both players for current record
+					view.updateTable(players,player);
+					view.printLine();
+				}
+			}
+			
+			int currentPDvalue[] = new int[2];
+			String currentPDname[] = new String[2];
+			String currentPDsuit[] = new String[2];
+			int x = 0;
+			// Second card onwards
+				for (GamePlayerInterface player : players) {
+					// take out card from dealer and give it to player
+					Card card = dealer.dealCard();
+					player.addCard(card);
+					
+					currentPDvalue[x] = card.getValue();
+					currentPDname[x] = card.getName();
+					currentPDsuit[x] = card.getSuit();
+					x++;
+					
+					numOfCards++;
+					
+					view.updateTable(players,player);
+					view.printLine();
+				}
+				
+				// Check which card is higher
+				
+				int PDbig = 0;
+				PDbig = compareBigger(currentPDvalue[0], currentPDvalue[1], currentPDsuit[0], 
+										currentPDsuit[1], currentPDname[0],currentPDname[1]);
+				
+				// Do any betting by either Player or Dealer
+				boolean ifContinue = true;
+				ifContinue = displayBet(PDbig, players);
+				if(!ifContinue){
+					result = 1;
+					break;
+				}
+				
+				view.printLine();
+		}
+		
+		//show all player's cards (include hidden cards
+		view.updateTableShowAllCards(players);
+		//assume human player is always the first in the arraylist
+		GamePlayerInterface player = players.get(0);
+		
+		//determine if human player has win
+		view.printLine();
+		view.print("Determine winning");
+		
+		result = determineWinning(player, dealer);
+		int totalChips = players.get(0).getChips();
+		
+		switch(result){
+		case 0: totalChips = (players.get(0).getChips()) + (betOnTable/2);
+				players.get(0).setChips(totalChips);
+				return totalChips;
+		case 1: break;
+		case 2:	totalChips = (players.get(0).getChips()) + betOnTable;
+				players.get(0).setChips(totalChips);
+				return totalChips;
+		default: view.print("Only 3 possibilities. Contact admin for assistance!");
+		}
+		view.printChips(totalChips);
+		view.print("End of Game");
+		//end of one game
+		
+		// Remove cards from previous arrays and re-add to original deck
+		for(GamePlayerInterface p : players){
+			recreateDeck(p);
+		}
+		
+		// initially, return result
+		return totalChips;
+	}
+	// return 1 Dealer win, 2 for Player win, else for Draw
+	private int determineWinning(GamePlayerInterface player, GamePlayerInterface dealer)
+    {
+        
+         int playerValue = player.getTotalCardsValue();
+         int dealerValue = dealer.getTotalCardsValue();
+         int result = 0;
+         
+         if(dealerValue > playerValue)
+         {
+        	 view.print("Dealer Wins");
+        	 view.printLine();
+        	 result = 1;
+         }
+         
+         else if(dealerValue < playerValue)
+         {
+        	 view.print("Player Wins");
+        	 view.printLine();
+        	 result = 2;
+         }
+         
+         else{
+        	 view.print("Match Draw!");
+        	 view.printLine();
+         }
+         
+         return result;
+    }	
+	public int compareBigger(int pValue, int dValue, String pSuit, 
+								String dSuit, String pName, String dName){
+		int num = 0;
+		
+		// To check P and D value
+		if(pValue > dValue){
+			num = 0;
+		}
+		else if(pValue < dValue){
+			num = 1;
+		}
+		
+		// To check P and D suit (value is equal)
+		if (getSuitValue(pSuit) > getSuitValue(dSuit)){
+			num = 0;
+		}
+		else if (getSuitValue(pSuit) < getSuitValue(dSuit)){
+			num = 1;
+		}
+		
+		// To check P and D name (value and suit are equal)
+		if (getNameValue(pName) > getNameValue(dName)){
+			num = 0;
+		}
+		else if (getNameValue(pName) < getNameValue(dName)){
+			num = 1;
+		}
+		return num;
+	}
+	public int getSuitValue(String pdSuit){	
+		int pxValue = 0;
+		switch(pdSuit){	
+			case "Spade":	pxValue = 4;
+			case "Heart":	pxValue = 3;
+			case "Club":	pxValue = 2;
+			case "Diamond":	pxValue = 1;
+			default:	pxValue = 0;
+		}
+		return pxValue;	
+	}	
+	public int getNameValue(String pdName){	
+		int pxName = 0;
+		switch(pdName){	
+			case "10":	pxName = 4;
+			case "J":	pxName = 3;
+			case "Q":	pxName = 2;
+			case "K":	pxName = 1;
+			default:	pxName = 0;
+		}
+		return pxName;	
+	}	
+	public boolean displayBet(int PDbig, ArrayList<GamePlayerInterface> players){
+		boolean isContinue = true;
+		char decision;
+		int currentBet = 0;
+		int max = players.get(0).getChips();
+		
+		view.print("Maximum number of chips allowed to bet is: " + max);
+		
+		if(PDbig == 1){
+			Random r = new Random();
+			currentBet = r.nextInt(max);
+			
+			view.print("Dealer call, state bet: " + currentBet);
+			
+			String toContinue = "Do you want to follow? [Y/N]: ";
+			decision = Keyboard.readChar(toContinue);
+			if(Character.toUpperCase(decision) == 'Y'){
+				view.print("Player chooses to Follow");
+				view.printLine();
+			}
+			else{
+				view.print("Player chooses not to Follow");
+				isContinue = false;
+			}
+		}
+		
+		else{
+			String toContinue = "Do you want to [C]all or [Q]uit?: ";
+			decision = Keyboard.readChar(toContinue);
+			if(Character.toUpperCase(decision) == 'C'){
+				view.print("Player chooses to Call");
+				String prompt = "Player call, state bet: ";
+				currentBet = Keyboard.readInt(prompt);
+				view.print("Player places his bet " + currentBet);
+			}
+			else{
+				view.print("Player chooses to Quit");
+				isContinue = false;
+			}
+		}
+		
+		betOnTable = betOnTable + (2 * currentBet);
+		view.print("Current bet on table: " + betOnTable);
+		
+		players.get(0).deductChips(currentBet);
+		players.get(1).deductChips(currentBet);
+		int playerGetChips = players.get(0).getChips();
+		view.displayGetChips(playerGetChips);
+		if(players.get(0).getChips() < 0){
+			view.print("Insufficient chips");
+			players.get(0).setChips(0);
+			isContinue = false;
+		}
+		
+		view.printLine();
+		view.print(players.get(0).getLoginName() + ", you are left with " + players.get(0).getChips());
+		
+		return isContinue;
+	}	
+	public void recreateDeck(GamePlayerInterface player){
+		for(int i = 0; i < player.getNumberOfCardsOnHand(); i++){
+			dealer.deck.appendCard(player.getCardsOnHand().get(i));
+		}
+		player.clearCardsOnHand();
+	}
+}
+============================================
+C:\Users\User\Desktop\A4WithoutGUI\src\./GameModule.java
+/*
+ * CSCI213 Assignment 2
+ * --------------------------
+ * File name: GameModule.java
+ * Author: V Prathyaksha
+ * Student Number: 5283048
+ * Description: Does login and setting of player
+ * before start of game
+ */
+
+ import java.util.*;
+
+public class GameModule {
+	public void run(){
+		ViewTransmitter tx = new ViewTransmitter();
+		GameView view = new GameView(tx);
+		MainPlayersData playerdata = new MainPlayersData();
+		
+		view.printMessage("HIGHLOW SUM GAME LOGIN");
+
+			//Player login
+			String playerUsername, playerPassword;
+			
+			playerUsername = Keyboard.readString("Enter Login name: ");
+			playerPassword = Keyboard.readString("Enter Password: ");
+			
+			int i = 0;
+			
+			boolean isAccount = false;
+			isAccount = playerdata.checkAccount(playerUsername, playerPassword);
+			if(isAccount){
+				view.printMessage("There is error in login! Please try again.");
+			}
+		
+		i = playerdata.checkWhichNumber(playerUsername);
+		
+		// Create the human player
+		GamePlayer humanPlayer = new GamePlayer(playerdata.playerList.get(i).getLoginName(), playerdata.playerList.get(i).getHashedPassword(), 
+												playerdata.playerList.get(i).getChips(), playerdata.playerList.get(i).getName(),
+												playerdata.playerList.get(i).getEmail(), playerdata.playerList.get(i).getBirthdate());
+		
+		BrainInterface humanBrain = new HumanBrain();
+		humanPlayer.setBrain(humanBrain);
+		
+		BrainInterface dealerBrain = new GotBrain();	
+
+		//create dealer
+		Dealer dealer = new Dealer();
+		dealer.setBrain(dealerBrain);
+		
+		ArrayList<GamePlayerInterface> players = new ArrayList<GamePlayerInterface>();
+		players.add(humanPlayer);
+		players.add(dealer);
+		
+		//this will run one game
+		GameController controller = new GameController(view,dealer,players);
+		
+		//return 1 for draw 2 for loss 3 for win
+		
+		view.printLine();
+		view.printMessage("HIGHLOW SUM GAME");
+		
+		char gameNext;
+		do{
+			view.printLine();
+			int result = controller.run();
+			
+			String nextG = "Next Game? (Y/N) > ";
+			gameNext = Keyboard.readChar(nextG);
+			
+			// Write into file
+			playerdata.playerList.get(i).setChips(result);
+			playerdata.updateMainPlayersDataToFile();
+			
+			view.printLine();
+		}while(Character.toUpperCase(gameNext) == 'Y');
+			
+	}
+}
+============================================
+C:\Users\User\Desktop\A4WithoutGUI\src\./GamePlayer.java
+/*
+ * CSCI213 Assignment 2
+ * --------------------------
+ * File name: GamePlayer.java
+ * Author: V Prathyaksha
+ * Student Number: 5283048
+ * Description: For every player created, the
+ * functions to modify the individual records,
+ * especially related to the cards in the 
+ * arraylist
+ */
+ 
+import java.util.*;
+
+public class GamePlayer extends Player implements GamePlayerInterface{
+
+	private ArrayList<Card> cardsOnHand;
+	private boolean stand;
+	private boolean isHuman;
+	private BrainInterface brain;
+	
+	public GamePlayer(String loginName, String hashedPassword, int chips,boolean isHuman,
+							String name, String email, String birthdate) {
+
+		super(loginName, hashedPassword, chips, name, email, birthdate);
+		this.isHuman = isHuman;
+		cardsOnHand = new ArrayList<Card>();
+		stand = false;
+		
+	}
+	public GamePlayer(String loginName, String hashedPassword, int chips,
+			String name, String email, String birthdate) {
+
+		super(loginName, hashedPassword, chips, name, email, birthdate);
+		this.isHuman = true;
+		cardsOnHand = new ArrayList<Card>();
+		stand = false;
+		
+	}
+	public void setChips(int chips)
+    {
+        this.chips = chips;
+    }
+	public int getChips()
+    {
+        return chips;
+    }
+	public void setBrain(BrainInterface brain) {
+		this.brain = brain;
+	}
+	public void addCard(Card card) {
+		cardsOnHand.add(card);
+	}
+	public void deductChips(int chips)
+    {
+        this.chips-=chips;
+    }
+	public int getTotalCardsValue() {
+		int totalValue = 0;
+
+		for (Card c : cardsOnHand) {
+
+			totalValue += c.getValue();
+		}
+		
+		return totalValue;
+	}
+	public ArrayList<Card> getCardsOnHand() {
+
+		return cardsOnHand;
+
+	}
+	public int getNumberOfCardsOnHand(){
+		
+		return cardsOnHand.size();
+	}
+	public void clearCardsOnHand() {
+		cardsOnHand.clear();
+	}
+	public char nextMove(){
+		//no error check here
+        return brain.nextMove(getTotalCardsValue());
+    }
+	public void setStand(){
+		stand = true;
+	}
+	public boolean isStand(){
+		return stand;
+	}
+	public boolean isHuman(){
+		return isHuman;
+	}
+}
+============================================
+C:\Users\User\Desktop\A4WithoutGUI\src\./GamePlayerInterface.java
+/*
+ * CSCI213 Assignment 2
+ * --------------------------
+ * File name: GamePlayerInterface.java
+ * Author: V Prathyaksha
+ * Student Number: 5283048
+ * Description: An interface to implement
+ * the functions in GamePlayer
+ */import java.util.ArrayList;
+
+public interface GamePlayerInterface {
+	
+	public void addCard(Card card);
+	public int getTotalCardsValue();
+	public ArrayList<Card> getCardsOnHand();
+	public void clearCardsOnHand();
+	public char nextMove();
+	public String getLoginName();
+	public void setStand();
+	public boolean isStand();
+	public boolean isHuman();
+	public int getNumberOfCardsOnHand();
+	public void setChips(int chips);
+	public int getChips();
+	public void deductChips(int chips);
+	
+}
+============================================
+C:\Users\User\Desktop\A4WithoutGUI\src\./GameServer.java
+public class GameServer {
+
+	private GameServerViewerThread viewer; 
+	private GameServerPlayerThread player;
+	
+	public GameServer() {}
+
+	AdminData admindata = new AdminData();
+	
+	public void run() {
+		
+		// Admin login
+		String adminUsername, adminPassword;
+		boolean isAccount = false;
+		
+		do{
+			adminUsername = Keyboard.readString("Enter Login name: ");
+			adminPassword = Keyboard.readString("Enter Password: ");
+			
+			isAccount = admindata.checkAccount(adminUsername, adminPassword);
+			
+		}while(isAccount);
+		
+		BroadCaster broadCaster = new BroadCaster();
+		
+		//A thread to let viewers connect in
+		viewer = new GameServerViewerThread(broadCaster);
+		viewer.start();
+		
+		//A thread to let player connect in
+		player = new GameServerPlayerThread(broadCaster,this);
+		player.start();		
+	}
+	
+	
+	public void endGameServerViewerThread(){
+		viewer.end();
+	}
+	
+
+	public static void main(String[] args) {
+		new GameServer().run();
+	}
+
+}
+============================================
+C:\Users\User\Desktop\A4WithoutGUI\src\./GameServerPlayerThread.java
+import java.io.*;
+import java.net.*;
+
+public class GameServerPlayerThread extends Thread {
+
+	private static final int DEFAULT_PORT = 4445;
+	private BroadCaster broadcaster;
+	private ServerSocket reception_socket;
+	private Socket client_socket;
+	private GameServer gameServer;
+	
+	public GameServerPlayerThread(BroadCaster broadcaster, GameServer gameServer) {
+		this.broadcaster = broadcaster;
+		this.gameServer = gameServer; 
+	}
+
+	public void run() {
+		int port = DEFAULT_PORT;
+
+		try {
+			reception_socket = new ServerSocket(port);
+			System.out.println("Started server on port:" + port);
+		} catch (IOException io) {
+			System.out.println("Cannot create server socket");
+			System.exit(0);
+		}
+
+		// only take in one player socket
+		try {
+			client_socket = reception_socket.accept();
+			handleClient(client_socket);
+		} catch (IOException ex) {
+			System.out.println("Problem accepting client socket");
+		}
+
+		handleClient(client_socket);
+
+	}
+
+	private void handleClient(Socket sock) {
+
+		// Get input and output stream
+		ObjectInputStream requests = null;
+		//ObjectOutputStream responses = null;
+		try {
+			//responses = new ObjectOutputStream(sock.getOutputStream());
+			//responses.flush();
+			requests = new ObjectInputStream(sock.getInputStream());
+		} catch (IOException io) {
+			System.out.println("Cannot open stream");
+			try {
+				sock.close();
+			} catch (Exception e) {
+			}
+			return;
+		}
+
+		boolean state = true;
+		while (state) {
+
+			try {
+
+				Message message = (Message) requests.readObject();
+				if (message.getControl().equals("Message")) {
+					//sent player message to all viewers
+					broadcaster.newMessage(message);
+				}else if(message.getControl().equals("Quit")){
+					
+					state = false;
+				}
+
+			} catch (ClassNotFoundException | IOException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		end();
+		System.out.println("GameServerPlayerThread ends");
+
+	}
+
+	
+	private void end(){
+
+		gameServer.endGameServerViewerThread();
+		
+		try {
+			reception_socket.close();
+			client_socket.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+
+	}
+	
+}
+============================================
+C:\Users\User\Desktop\A4WithoutGUI\src\./GameServerViewerThread.java
+import java.io.*;
+import java.net.*;
+
+public class GameServerViewerThread extends Thread {
+
+	private static final int DEFAULT_PORT = 4444;
+	private BroadCaster broadcaster;
+	private boolean state;
+	private ServerSocket reception_socket;
+	
+	public GameServerViewerThread(BroadCaster broadcaster) {
+		this.broadcaster = broadcaster;
+		state = true;
+	}
+
+	public void run() {
+		int port = DEFAULT_PORT;
+
+		try {
+			reception_socket = new ServerSocket(port);
+			System.out.println("Started server on port:" + port);
+		} catch (IOException io) {
+			System.out.println("Cannot create server socket");
+			System.exit(0);
+		}
+
+		while(state) {
+			Socket client_socket = null;
+
+			try {
+				client_socket = reception_socket.accept();
+				GameViewerTransmitter client = new GameViewerTransmitter(client_socket);
+				broadcaster.addClient(client);
+			}catch(SocketException se){
+				//closing the reception_socket will cause this exception to be thrown
+				state = false;
+				broadcaster.removeAllClient();
+			} catch (IOException ex) {
+				System.out.println("Problem accepting client socket");
+			}
+		}
+		
+		end();
+		System.out.println("GameServerViewerThread ends");
+			
+	}
+	
+	
+	public void end(){
+		
+		
+		
+		try {
+			reception_socket.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+	}
+}
+============================================
+C:\Users\User\Desktop\A4WithoutGUI\src\./GameView.java
+/*
+ * CSCI213 Assignment 2
+ * --------------------------
+ * File name: GameView.java
+ * Author: V Prathyaksha
+ * Student Number: 5283048
+ * Description: Does all display related functions
+ */
+import java.util.*;
+
+public class GameView {
+	
+	private ViewTransmitter tx;
+	
+	public GameView(ViewTransmitter tx){
+		this.tx = tx;
+	}
+
+	public void displayIntro(){
+		
+		String s = "Game Starts\nDealer shuffles cards";
+		System.out.println(s);
+		tx.sentMessage(s);
+	}
+	public void displayRound(int round){
+		String s = "Dealer dealing cards - ROUND " + round + "\n";
+		System.out.println(s);
+		tx.sentMessage(s);
+	}
+	public void displayGetChips(int chips){
+		String s = "Player has " + chips + " chips";
+		System.out.println(s);
+		tx.sentMessage(s);
+	}
+	public void printChips(int chips){
+		String s = "Total chips for Player is: " + chips + "\n";;
+		System.out.println(s);
+		tx.sentMessage(s);
+	}
+	public void displayEnding(){
+		String s = "Thank you for playing odd and even game";
+		System.out.println(s);
+		tx.sentMessage(s);
+	}
+	
+	public void print(String s){
+		System.out.println(s);
+		tx.sentMessage(s);
+	}
+	public void updateTable(ArrayList<GamePlayerInterface> players, GamePlayerInterface player){
+		
+		for(GamePlayerInterface p: players){
+			
+			if(!p.getLoginName().equals(player.getLoginName()))
+					showPlayerCards(p);
+		}
+		
+		showPlayerCards(player);
+	}
+	public void updateTableShowAllCards(ArrayList<GamePlayerInterface> players){
+		
+		for(GamePlayerInterface p: players){
+			
+			showAllPlayerCard(p);
+		}
+	}
+	//this will show the hidden card too
+	public void showAllPlayerCard(GamePlayerInterface player){
+		
+		System.out.println(player.getLoginName());
+		ArrayList<Card> cards = player.getCardsOnHand();
+		
+		for(Card card:cards){
+			
+				System.out.print(card+" ");
+				
+		}
+		
+		System.out.println();
+		System.out.print("Value    :"+player.getTotalCardsValue()); 
+		System.out.println();
+	}
+	//this will not show the hidden card
+	public void showPlayerCards(GamePlayerInterface player){
+		
+		System.out.println(player.getLoginName());
+		ArrayList<Card> cards = player.getCardsOnHand();
+		int count = 0;
+		
+		for(Card card:cards){
+			
+			if(!player.isHuman() && count == 0){
+				System.out.print("<HIDDEN CARD> ");
+				count++;
+			}
+			else
+				System.out.print(card+" ");
+				
+		}
+		
+		if(player.isHuman()){
+			System.out.println();
+			System.out.print("Value    :"+player.getTotalCardsValue()); 
+		}
+		
+		System.out.println();
+		
+	}
+	public void printMessage(String message){
+		System.out.println(message);
+		tx.sentMessage(message);
+	}
+	public void printLine(){
+		Keyboard.line(50, "-");
+	}
+}
+============================================
+C:\Users\User\Desktop\A4WithoutGUI\src\./GameViewer.java
+
+import java.net.*;
+import java.io.*;
+
+public class GameViewer {
+
+	private static final int DEFAULT_PORT = 4444;
+	private static final String hostName = "localhost";
+
+	private ObjectInputStream responseStream;
+	private ObjectOutputStream requestStream;
+
+	private InetAddress ina;
+	private Socket s;
+
+	private boolean status;
+
+	public GameViewer(int id) {
+
+		try {
+			ina = InetAddress.getByName(hostName);
+		} catch (UnknownHostException u) {
+			System.out.print("Cannot find host name");
+			System.exit(0);
+		}
+
+		try {
+			s = new Socket(ina, DEFAULT_PORT);
+		} catch (IOException ex) {
+			System.out.print("Cannot connect to host");
+			System.exit(1);
+		}
+
+		// Get I/O streams make the ObjectStreams
+		// for serializable objects
+		try {
+			responseStream = new ObjectInputStream(s.getInputStream());
+			requestStream = new ObjectOutputStream(s.getOutputStream());
+			requestStream.flush();
+		} catch (IOException io) {
+
+			System.out.println("Failed to get socket streams");
+			System.exit(1);
+		}
+
+		this.status = true;
+
+	}
+
+	
+
+	private Receiver rec;
+
+	PlayersData playerdata = new PlayersData();
+	
+	public void run() {
+		
+		// player user login
+		String playerUsername, playerPassword;
+		boolean isAccount = false;
+		
+		do{
+			playerUsername = Keyboard.readString("Enter Login name: ");
+			playerPassword = Keyboard.readString("Enter Password: ");
+			
+			isAccount = playerdata.checkAccount(playerUsername, playerPassword);
+		}while(!isAccount);
+		
+		System.out.println("Starting viewer client");
+		rec = new Receiver();
+		rec.start();
+	}
+
+	private class Receiver extends Thread {
+
+		public void run() {
+
+			while (status) {
+				try {
+					Message response = (Message) responseStream.readObject();
+					
+					
+					if(response.getControl().equals("Message"))
+					{
+						System.out.println(response.getAssociatedData());
+					}
+					else if(response.getControl().equals("Quit"))
+					{
+						status = false;
+					}
+				} catch (IOException e) {
+
+					status = false;
+					System.out.println("Stream closed");
+				} catch (ClassNotFoundException e) {
+
+					e.printStackTrace();
+				} 
+			}
+		
+			end();
+			System.out.println("GameViewer ends");
+		}
+		
+		//clean up here
+		public void end(){
+			
+			try {
+				requestStream.close();
+				responseStream.close();
+				s.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
+	}
+	
+
+	public static void main(String[] args) {
+		
+		new GameViewer(1).run();
+	}
+
+
+}
+============================================
+C:\Users\User\Desktop\A4WithoutGUI\src\./GameViewerTransmitter.java
+
+
+import java.io.*;
+import java.net.*;
+
+public class GameViewerTransmitter {
+
+	private Socket sock;
+	//private ObjectInputStream requests;
+	private ObjectOutputStream responses;
+
+	public GameViewerTransmitter(Socket sock) {
+		this.sock = sock;
+
+		try {
+
+			responses = new ObjectOutputStream(sock.getOutputStream());
+			responses.flush();
+			//requests = new ObjectInputStream(sock.getInputStream());
+
+		} catch (IOException io) {
+			System.out.println("Cannot open stream");
+
+			try {
+				sock.close();
+			} catch (Exception e) {
+			}
+			System.exit(0);
+		}
+
+	}
+
+	public void sentMessage(Message message) {
+
+		try {
+			responses.writeObject(message);
+			responses.flush();
+            responses.reset();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	
+	}
+	
+	
+	public void end() {
+
+		try {
+			responses.close();
+			sock.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+}
+============================================
+C:\Users\User\Desktop\A4WithoutGUI\src\./GotBrain.java
+public class GotBrain implements BrainInterface{
+
+	@Override
+	public char nextMove(int cardsValue) {
+		// TODO Auto-generated method stub
+		char nextMove = 'S';
+
+		//int cardsValue = getTotalCardsValue();
+
+		if (cardsValue < 999) {
+			nextMove = 'H';
+		}
+
+		return nextMove;
+	}
+
+}
+============================================
+C:\Users\User\Desktop\A4WithoutGUI\src\./HumanBrain.java
+/*
+ * CSCI213 Assignment 2
+ * --------------------------
+ * File name: HumanBrain.java
+ * Author: V Prathyaksha
+ * Student Number: 5283048
+ * Description: Reads input value for H or S
+ * which decides if the player continues the game or not
+ */
+
+public class HumanBrain implements BrainInterface{
+
+	public char nextMove(int cardsValue) {
+		// TODO Auto-generated method stub
+		return  Keyboard.readChar("[H]it or [S]tand >");
+	}
+}
+============================================
+C:\Users\User\Desktop\A4WithoutGUI\src\./Keyboard.java
+
+public class Keyboard {
+
+  
+  
+  @SuppressWarnings("resource")
+public static String readString(String prompt) {
+    System.out.print(prompt);
+    return new java.util.Scanner(System.in).nextLine();
+  }
+
+  public static int readInt(String prompt) {
+    int input = 0;
+    boolean valid = false;
+    while (!valid) {
+      try {
+        input = Integer.parseInt(readString(prompt));
+        valid = true;
+      } catch (NumberFormatException e) {
+        System.out.println("*** Please enter an integer ***");
+      }
+    }
+    return input;
+  }
+
+  public static double readDouble(String prompt) {
+    double input = 0;
+    boolean valid = false;
+    while (!valid) {
+      try {
+        input = Double.parseDouble(readString(prompt));
+        valid = true;
+      } catch (NumberFormatException e) {
+        System.out.println("*** Please enter a double ***");
+      }
+    }
+    return input;
+  }
+
+  public static float readFloat(String prompt) {
+    float input = 0;
+    boolean valid = false;
+    while (!valid) {
+      try {
+        input = Float.parseFloat(readString(prompt));
+        valid = true;
+      } catch (NumberFormatException e) {
+        System.out.println("*** Please enter a float ***");
+      }
+    }
+    return input;
+  }
+
+  public static long readLong(String prompt) {
+    long input = 0;
+    boolean valid = false;
+    while (!valid) {
+      try {
+        input = Long.parseLong(readString(prompt));
+        valid = true;
+      } catch (NumberFormatException e) {
+        e.printStackTrace();
+        System.out.println("*** Please enter a long ***");
+      }
+    }
+    return input;
+  }
+
+  public static char readChar(String prompt) {
+    char input = 0;
+    boolean valid = false;
+    while (!valid) {
+      String temp = readString(prompt);
+      if (temp.length() != 1) {
+        System.out.println("*** Please enter a character ***");
+      } else {
+        input = temp.charAt(0);
+        valid = true;
+      }
+    }
+    return input;
+  }
+
+  public static boolean readBoolean(String prompt) {
+    boolean valid = false;
+    while (!valid) {
+      String input = readString(prompt);
+      if (input.equalsIgnoreCase("yes") || input.equalsIgnoreCase("y")
+          || input.equalsIgnoreCase("true") || input.equalsIgnoreCase("t")) {
+        return true;
+      } else if (input.equalsIgnoreCase("no") || input.equalsIgnoreCase("n")
+          || input.equalsIgnoreCase("false") || input.equalsIgnoreCase("f")) {
+        return false;
+      } else {
+        System.out.println("*** Please enter Yes/No or True/False ***");
+      }
+    }
+    return false;
+  }
+
+  public static java.util.Date readDate(String prompt) {
+    java.util.Date date = null;
+    boolean valid = false;
+    while (!valid) {
+      try {
+        String input = readString(prompt).trim();
+        if (input.matches("\\d\\d/\\d\\d/\\d\\d\\d\\d")) {
+          int day = Integer.parseInt(input.substring(0, 2));
+          int month = Integer.parseInt(input.substring(3, 5));
+          int year = Integer.parseInt(input.substring(6, 10));
+          java.util.Calendar cal = java.util.Calendar.getInstance();
+          cal.setLenient(false);
+          cal.set(year, month - 1, day, 0, 0, 0);
+          date = cal.getTime();
+          valid = true;
+        } else {
+          System.out.println("*** Please enter a date (DD/MM/YYYY) ***");
+        }
+      } catch (IllegalArgumentException e) {
+        System.out.println("*** Please enter a date (DD/MM/YYYY) ***");
+      }
+    }
+    return date;
+  }
+  
+  private static String quit = "0";
+  
+  public static int getUserOption(String title, String[] menu) {
+    displayMenu(title, menu);
+    int choice = Keyboard.readInt("Enter Choice --> ");
+    while (choice > menu.length || choice < 0) {
+      choice = Keyboard.readInt("Invalid Choice, Re-enter --> ");
+    }
+    return choice;
+  }
+
+  private static void displayMenu(String title, String[] menu) {
+    line(80, "=");
+    System.out.println(title.toUpperCase());
+    line(80, "-");
+    for (int i = 0; i < menu.length; i++) {
+      System.out.println("[" + (i + 1) + "] " + menu[i]);
+    }
+    System.out.println("[" + quit + "] Quit");
+    line(80, "-");
+    }
+  
+  public static void line(int len, String c) {
+    System.out.println(String.format("%" + len + "s", " ").replaceAll(" ", c));
+  }
+}
+============================================
+C:\Users\User\Desktop\A4WithoutGUI\src\./MainPlayersData.java
+/*
+ * CSCI213 Assignment 2
+ * --------------------------
+ * File name: MainPlayersData.java
+ * Author: V Prathyaksha
+ * Student Number: 5283048
+ * Description: Contains all other miscellaneous 
+ * functions needed to handle the Player data
+ */
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Scanner;
+
+
+// Open players.dat and imports players to playerList arrayList
+public class MainPlayersData{
+    public ArrayList<Player> playerList;
+   
+    public MainPlayersData(){
+    
+	playerList = new ArrayList<Player>();
+    
+    try{
+        Scanner fileScanner = new Scanner(new File("players.dat"));
+        while(fileScanner.hasNextLine())
+        {   
+            String data = fileScanner.nextLine();
+            String [] dataArray = data.split("\\|");
+            String loginName = dataArray[0];
+            String hashedPassword = dataArray[1];
+            String chipsString = dataArray[2];
+            int chips = Integer.parseInt(chipsString);
+            String name = dataArray[3];
+            String email = dataArray[4];
+            String birthdate = dataArray[5];
+            
+            Player p = new Player(loginName,hashedPassword,chips,name,email,birthdate);
+            playerList.add(p);
+        }
+        fileScanner.close();
+	
+	    }
+	    catch(FileNotFoundException ex)
+	    {
+	        System.out.println("players.dat not found.");
+	        
+	    }
+	}
+	public void updateMainPlayersDataToFile()
+	{
+	    try{
+	    
+	        PrintWriter fileOut = new PrintWriter("players.dat");
+	        
+	        for(Player p:playerList)
+	        {
+	            String loginName = p.getLoginName();
+	            String hashedPassword = p.getHashedPassword();
+	            String chipsString = p.getChips()+"";
+	            String name = p.getName();
+	            String email = p.getEmail();
+	            String birthday = p.getBirthdate();
+	            
+	            String format = loginName+"|"+hashedPassword+"|"+chipsString+"|"+name+"|"+email+"|"+birthday;
+	            fileOut.println(format);
+	            
+	        }
+	        
+	        fileOut.close();
+	        
+	    }catch(IOException e)
+	    {
+	        System.out.println("Unable to open players.dat for writing.");
+	        
+	    }
+	    
+	}
+	public Player getPlayer(String loginName)
+	{
+	    Player player=null;
+	    
+	    for(Player p:playerList)
+	        {
+	            if(p.getLoginName().equals(loginName))
+	            {
+	                
+	                player = p;
+	            }
+	            
+	        }
+	    
+	    return player;
+	}
+	public boolean checkAccount(String username, String password){
+		boolean status = true;
+		for(Player p:playerList)
+        {
+			// Check username
+            if(p.getLoginName().equals(username))
+            {
+                // Check password
+            	boolean pwCheck = true;
+            	p.checkPassword(password);
+    	        if(pwCheck){
+    	        	return status;
+    	        }
+    	        else{
+    	        	status = false;
+    	        }
+            }
+            else{
+            	status = false;
+            }
+        }
+		return status;
+	}
+	public int checkWhichNumber(String username){
+		int i = 0;
+		
+		for(Player p : playerList){
+			if(p.getLoginName().equals(username)){
+				return (i);
+			}
+			i++;
+		}
+		System.out.println("Error found at checkWhichNumber() function!"); 
+		return 0;
+	}
+	@Override
+ 	public String toString() {
+		return "MainPlayersData [playerList=" + playerList + ", getClass()=" + getClass() + ", hashCode()=" + hashCode()
+				+ ", toString()=" + super.toString() + "]";
+	}
+}
+============================================
+C:\Users\User\Desktop\A4WithoutGUI\src\./Message.java
+
+
+import java.io.Serializable;
+
+@SuppressWarnings("serial")
+public class Message implements Serializable{
+
+    private String control;
+    private String associatedData;
+    
+    public Message(String c,String a)
+    {
+        control = c;
+        associatedData = a;
+    }
+
+	public String getControl() {
+		return control;
+	}
+
+	public String getAssociatedData() {
+		return associatedData;
+	}
+    
+}
+============================================
+C:\Users\User\Desktop\A4WithoutGUI\src\./Player.java
+/*
+ * CSCI213 Assignment 2
+ * --------------------------
+ * File name: Player.java
+ * Author: V Prathyaksha
+ * Student Number: 5283048
+ * Description: Has all the getters and setters for each Player
+ */
+
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+
+public class Player extends User {
+    
+    protected int chips;
+    protected String name;
+    protected String email;
+    protected Calendar birthdate;
+    
+    public Player(String loginName,String hashedPassword,int chips, 
+    				String name,String email, String birthdate)
+    {
+        super(loginName,hashedPassword);
+        this.chips=chips;
+        this.name = name;
+        this.email = email;
+
+        String[] dateElements = birthdate.split("-");
+        int year = Integer.parseInt(dateElements[0]);
+        int month = Integer.parseInt(dateElements[1]);
+        int day = Integer.parseInt(dateElements[2]);
+        this.birthdate = new GregorianCalendar(year,month-1,day);
+    }
+    public Player(String loginName,String hashedPassword,int chips, 
+    				String name,String email, Calendar birthdate)
+    {
+        super(loginName,hashedPassword);
+        this.chips=chips;
+        this.name = name;
+        this.email = email;
+        this.birthdate = birthdate;
+    }    
+    public int getChips()
+    {
+        return chips;
+    }
+    public void addChips(int chips)
+    {
+        this.chips+=chips;
+    }
+    public void deductChips(int chips)
+    {
+        this.chips-=chips;
+    }
+    public void setChips(int chips)
+    {
+        this.chips = chips;
+    }
+	public void setBirthdate(Calendar birthdate) {
+		this.birthdate = birthdate;
+	}
+	public String getName() {
+		return name;
+	}
+	public void setName(String name) {
+		this.name = name;
+	}
+	public String getEmail() {
+		return email;
+	}
+	public void setEmail(String email) {
+		this.email = email;
+	}
+	public String getBirthdate(){
+		return birthdate.get(Calendar.YEAR)+"-"+(birthdate.get(Calendar.MONTH)+1)+"-"+birthdate.get(Calendar.DAY_OF_MONTH);
+	}
+}
+============================================
+C:\Users\User\Desktop\A4WithoutGUI\src\./PlayersData.java
+/*
+ * CSCI213 Assignment 2
+ * --------------------------
+ * File name: PlayersData.java
+ * Author: V Prathyaksha
+ * Student Number: 5283048
+ * Description: Contains all other miscellaneous 
+ * functions needed to handle the Player data
+ */
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Scanner;
+
+
+// Open players.dat and imports players to playerList arrayList
+public class PlayersData{
+    public ArrayList<Player> playerList;
+   
+    public PlayersData(){
+    
+	playerList = new ArrayList<Player>();
+    
+    try{
+        Scanner fileScanner = new Scanner(new File("players.dat"));
+        while(fileScanner.hasNextLine())
+        {   
+            String data = fileScanner.nextLine();
+            String [] dataArray = data.split("\\|");
+            String loginName = dataArray[0];
+            String hashedPassword = dataArray[1];
+            String chipsString = dataArray[2];
+            int chips = Integer.parseInt(chipsString);
+            String name = dataArray[3];
+            String email = dataArray[4];
+            String birthdate = dataArray[5];
+            
+            Player p = new Player(loginName,hashedPassword,chips,name,email,birthdate);
+            playerList.add(p);
+        }
+        fileScanner.close();
+	
+	    }
+	    catch(FileNotFoundException ex)
+	    {
+	        System.out.println("players.dat not found.");
+	        
+	    }
+	}
+	public void updatePlayerDataToFile()
+	{
+	    try{
+	    
+	        PrintWriter fileOut = new PrintWriter("players.dat");
+	        
+	        for(Player p:playerList)
+	        {
+	            String loginName = p.getLoginName();
+	            String hashedPassword = p.getHashedPassword();
+	            String chipsString = p.getChips()+"";
+	            String name = p.getName();
+	            String email = p.getEmail();
+	            String birthday = p.getBirthdate();
+	            
+	            String format = loginName+"|"+hashedPassword+"|"+chipsString+"|"+name+"|"+email+"|"+birthday;
+	            fileOut.println(format);
+	            
+	        }
+	        
+	        fileOut.close();
+	        
+	    }catch(IOException e)
+	    {
+	        System.out.println("Unable to open players.dat for writing.");
+	        
+	    }
+	    
+	}
+	public Player getPlayer(String loginName)
+	{
+	    Player player=null;
+	    
+	    for(Player p:playerList)
+	        {
+	            if(p.getLoginName().equals(loginName))
+	            {
+	                
+	                player = p;
+	            }
+	            
+	        }
+	    
+	    return player;
+	}
+	public boolean checkAccount(String username, String password){
+		boolean status = true;
+		for(Player p:playerList)
+        {
+			// Check username
+            if(p.getLoginName().equals(username))
+            {
+                // Check password
+            	boolean pwCheck = true;
+            	p.checkPassword(password);
+    	        if(pwCheck){
+    	        	return status;
+    	        }
+    	        else{
+    	        	status = false;
+    	        }
+            }
+            else{
+            	status = false;
+            }
+        }
+		return status;
+	}
+	public int checkWhichNumber(String username){
+		int i = 0;
+		
+		for(Player p : playerList){
+			if(p.getLoginName().equals(username)){
+				return (i);
+			}
+			i++;
+		}
+		System.out.println("Error found at checkWhichNumber() function!"); 
+		return 0;
+	}
+	@Override
+ 	public String toString() {
+		return "PlayersData [playerList=" + playerList + ", getClass()=" + getClass() + ", hashCode()=" + hashCode()
+				+ ", toString()=" + super.toString() + "]";
+	}
+}
+============================================
+C:\Users\User\Desktop\A4WithoutGUI\src\./User.java
+/*
+ * CSCI213 Assignment 2
+ * --------------------------
+ * File name: User.java
+ * Author: V Prathyaksha
+ * Student Number: 5283048
+ * Description: Has all the getters and setters common for dealer and human player
+ */
+
+abstract public class User {
+    
+    private String loginName;
+    private String hashedPassword;
+    
+    public User(String loginName,String hashedPassword)
+    {
+        this.loginName = loginName;
+        this.hashedPassword = hashedPassword;
+    }
+    public String getLoginName()
+    {
+        return loginName;
+    }
+    public String getHashedPassword()
+    {
+        return hashedPassword;
+    }
+    public void setHashedPassword(String newHashedPassword)
+    {
+        this.hashedPassword = newHashedPassword;
+    }
+    public boolean checkPassword(String password)
+    {
+        boolean status = false;
+        String hPassword = Utility.getHash(password);
+        
+        if(hashedPassword.equals(hPassword))
+        {
+            status = true;
+        }
+        
+        return status;
+    }
+ 
+}
+============================================
+C:\Users\User\Desktop\A4WithoutGUI\src\./Utility.java
+import java.security.MessageDigest;
+
+public class Utility {
+    
+    public static String getHash(String base)
+    {
+        String message=""; 
+         
+        try{
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] hash = digest.digest(base.getBytes("UTF-8"));
+        StringBuffer hexString = new StringBuffer();
+
+        for (int i = 0; i < hash.length; i++) {
+            String hex = Integer.toHexString(0xff & hash[i]);
+            if(hex.length() == 1) hexString.append('0');
+            hexString.append(hex);
+        }
+
+        message = hexString.toString();
+    
+        } catch(Exception ex){
+             throw new RuntimeException(ex);
+        }
+        
+        return message;
+    }
+     
+    public static void printLine(int num)
+    {
+      printLine(num,'-');
+    }
+     
+    public static void printDoubleLine(int num)
+    {
+        printLine(num,'=');
+    }
+    
+    
+    public static void printLine(int num,char pattern)
+    {
+      for(int i =0;i<num;i++)
+      {
+          System.out.print(pattern);
+      }
+      System.out.println("");
+        
+    }
+    
+}
+============================================
+C:\Users\User\Desktop\A4WithoutGUI\src\./ViewTransmitter.java
+
+
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.UnknownHostException;
+import java.util.Scanner;
+
+public class ViewTransmitter {
+
+	private static final int DEFAULT_PORT = 4445;
+	private static final String hostName = "localhost";
+	private ObjectOutputStream requestStream;
+	private InetAddress ina;
+	private Socket s;
+	Scanner input = new Scanner(System.in);
+
+	public ViewTransmitter() {
+
+		try {
+			ina = InetAddress.getByName(hostName);
+		} catch (UnknownHostException u) {
+			System.out.print("Cannot find host name");
+			System.exit(0);
+		}
+
+		try {
+			s = new Socket(ina, DEFAULT_PORT);
+		} catch (IOException ex) {
+			System.out.print("Cannot connect to host");
+			System.exit(1);
+		}
+
+		try {
+			requestStream = new ObjectOutputStream(s.getOutputStream());
+			requestStream.flush();
+		} catch (IOException io) {
+
+			System.out.println("Failed to get socket streams");
+			System.exit(1);
+		}
+	}
+
+	
+	public void sentMessage(String message){
+		
+		Message m = new Message("Message",message);
+		sentMessage(m);
+	}
+	
+	public void sentMessage(Message message) {
+
+		try {
+
+			requestStream.writeObject(message);
+			requestStream.flush();
+			requestStream.reset();
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+
+	public void end(){
+		
+		Message m = new Message("Quit","");
+		sentMessage(m);		
+		
+		try {
+			requestStream.close();
+			s.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+}
